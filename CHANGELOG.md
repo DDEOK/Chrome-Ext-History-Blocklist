@@ -4,6 +4,15 @@
 `src/` 나 `manifest.json` 을 고치면 반드시 버전을 올린다 (`tools/manifest.test.js` 가 강제).
 팝업과 설정 화면 머리에도 로드된 버전이 뜬다.
 
+## 1.2.0 — 2026-09-11
+
+- **확장 ID 고정** — `manifest.json` 에 `key` 를 넣어 설치 경로와 무관하게 ID 가
+  `jhkhlikcigccmladmjnknhfijmjlnccc` 로 고정된다. **차단 목록이 기기 간에 동기화된다**
+- ⚠️ **이 버전으로 올리면 기존 차단 목록이 사라진 것처럼 보인다.** ID 가 바뀌어 옛 ID 의
+  `storage.sync` 통을 더는 안 읽기 때문이다. 도메인을 한 기기에서 다시 등록하면 나머지로 퍼진다
+- `tools/extension_id.py` — `key` 에서 ID 를 계산한다
+- 서명 개인키는 `keys/extension-key.pem` (저장소가 private 인 전제)
+
 ## 1.1.0 — 2026-09-11
 
 - 주소표시줄 키워드 모드: `hb` + <kbd>Tab</kbd> → 도메인 + <kbd>Enter</kbd> 로 차단/해제

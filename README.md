@@ -80,14 +80,39 @@ git clone https://github.com/DDEOK/Chrome-History-Blocklist.git
 
 마지막 줄이 찍어준 경로를 위 3번에서 선택한다.
 
-> [!warning] **차단 목록은 기기 간에 따라오지 않는다**
-> 목록은 `chrome.storage.sync` 에 있어 같은 Chrome 계정이면 동기화되지만, **그 저장소는 확장
-> ID 단위**다. 그리고 압축해제 확장은 `manifest.json` 에 `key` 가 없으면 **ID 가 기기마다
-> 달라진다.** 그래서 윈도우에서는 **빈 목록으로 시작**한다.
->
-> 맞추려면 확장 ID 를 고정해야 하고, 그 공개키는 Chrome 개발자 대시보드에 zip 을 올려야 나온다
-> (게시는 안 해도 된다). 그만한 가치가 없으면 양쪽에서 따로 등록하거나 목록을
-> 내보내기/가져오기로 옮긴다.
+## 기기 간 동기화
+
+| 무엇 | 어떻게 |
+|---|---|
+| **확장 설치** | **안 된다.** Chrome Sync 는 웹스토어에서 설치한 확장만 나른다. 기기마다 `git clone` + 압축해제 로드 |
+| **코드 갱신** | 기기마다 `git pull` 후 확장 카드의 ↻. 카드 버전이 바뀌면 반영된 것 |
+| **차단 목록** | **된다** (v1.2.0 부터). `chrome.storage.sync` 라 같은 Chrome 계정이면 퍼진다 |
+
+목록 동기화의 전제는 **모든 기기에서 확장 ID 가 같다**는 것이다. 압축해제 확장의 ID 는
+`manifest.json` 에 `key` 가 없으면 **설치 경로에서** 나와 기기마다 달라지는데, `key` 를 박아
+경로와 무관하게 고정했다.
+
+```text
+확장 ID: jhkhlikcigccmladmjnknhfijmjlnccc
+```
+
+`chrome://extensions` 카드의 `ID:` 줄이 모든 기기에서 이 값이어야 한다. 다르면 그 기기는 다른
+`storage.sync` 통을 쓰고 있는 것이다. `python3 tools/extension_id.py` 가 `key` 에서 이 값을
+다시 계산한다.
+
+> [!warning] `key` 를 바꾸면 기존 목록이 **사라진 것처럼** 보인다
+> ID 가 바뀌면 옛 ID 의 `storage.sync` 통을 더는 안 읽는다. 데이터가 지워진 것은 아니지만
+> 되찾을 수단이 없으므로, 도메인을 다시 등록해야 한다. `tools/manifest.test.js` 가 ID 상수와
+> 개인키-공개키 대응을 고정해 실수로 바뀌는 것을 막는다.
+
+### 서명 개인키
+
+`keys/extension-key.pem` 은 이 확장 ID 를 만드는 **개인키**이고 저장소에 함께 둔다 —
+**저장소가 private 이라는 전제**다. 압축해제 로드에는 쓰이지 않고(`manifest` 의 `key` 만 쓴다),
+`.crx` 를 직접 서명해 배포할 때만 필요하다.
+
+- 저장소를 공개로 바꾸면 **키부터 새로 만든다** — 남이 같은 ID 의 확장을 서명할 수 있다
+- 웹스토어에 올릴 일이 생기면 `keys/` 를 zip 에서 빼고, `key` 필드도 지운다(스토어가 자체 키를 준다)
 
 ## 개발
 
@@ -123,7 +148,10 @@ src/
   ui.css          팝업·옵션 공용 (라이트/다크 대응)
 tools/
   make_icons.py       아이콘 생성기
+  extension_id.py     manifest 의 key 에서 확장 ID 계산
   matching.test.js    도메인 매칭
   api-surface.test.js 쓰는 chrome API 의 실재
-  manifest.test.js    버전 갱신·형식
+  manifest.test.js    버전·확장 ID·키 대응
+keys/
+  extension-key.pem   확장 서명 개인키 (저장소가 private 인 전제)
 ```
