@@ -81,10 +81,14 @@ el.toggle.addEventListener('click', async () => {
     say(`${coveringDomain} 차단 해제. 이후 방문부터 기록이 남는다.`, 'ok');
   } else {
     const result = await addDomain(currentHost);
+    const failure = {
+      duplicate: '이미 등록돼 있다.',
+      full: '저장 한도(512개)에 걸렸다. 설정에서 안 쓰는 도메인을 지워라.',
+    };
     say(
       result.ok
         ? `${result.domain} 차단. 과거 기록도 정리 중이다.`
-        : '이미 등록돼 있거나 올바른 도메인이 아니다.',
+        : (failure[result.reason] ?? '올바른 도메인이 아니다.'),
       result.ok ? 'ok' : 'error',
     );
   }

@@ -1,7 +1,17 @@
 // 백그라운드·팝업·옵션이 함께 쓰는 도메인 매칭과 설정 접근.
 // 매칭 규칙은 한 곳(matchedDomain)에만 두고, 화면 쪽에서 다시 구현하지 않는다.
+//
+// 저장 구조: 도메인 하나에 키 하나(`d:example.com` → 추가 시각 ms).
+// 목록 전체를 배열 한 키에 담으면 `chrome.storage.sync` 가 **키 단위로 마지막 쓰기만**
+// 남기므로, 두 기기가 각각 추가하면 한쪽 추가분이 통째로 사라진다. 키를 쪼개면 서버가
+// 키 단위로 병합해 둘 다 남는다 — 충돌 해소용 타임스탬프가 따로 필요 없어진다.
 
-const SYNC_DEFAULTS = { enabled: true, domains: [] };
+const DOMAIN_PREFIX = 'd:';
+/** v1.2.0 이하가 쓰던 배열 키. 첫 실행에 옮기고 지운다. */
+const LEGACY_KEY = 'domains';
+/** storage.sync 의 MAX_ITEMS 는 512. `enabled` 등 여유를 두고 상한을 잡는다. */
+const MAX_DOMAINS = 480;
+
 const LOCAL_DEFAULTS = { deletedCount: 0, lastDeletedAt: 0 };
 
 /**
@@ -65,11 +75,27 @@ export function matchedDomain(url, domains) {
   return domains.find((d) => hostMatches(host, d)) ?? null;
 }
 
+/** 저장된 키 전체에서 도메인 목록과 추가 시각을 뽑는다. 아직 안 옮긴 배열도 함께 읽는다. */
+function readDomains(all) {
+  const addedAt = new Map();
+  for (const [key, value] of Object.entries(all)) {
+    if (!key.startsWith(DOMAIN_PREFIX)) continue;
+    addedAt.set(key.slice(DOMAIN_PREFIX.length), Number(value) || 0);
+  }
+  // 마이그레이션 전이거나 옛 버전 기기가 아직 쓰고 있는 배열
+  for (const domain of Array.isArray(all[LEGACY_KEY]) ? all[LEGACY_KEY] : []) {
+    if (!addedAt.has(domain)) addedAt.set(domain, 0);
+  }
+  return addedAt;
+}
+
 export async function getSettings() {
-  const v = await chrome.storage.sync.get(SYNC_DEFAULTS);
+  const all = await chrome.storage.sync.get(null);
+  const addedAt = readDomains(all);
   return {
-    enabled: v.enabled !== false,
-    domains: Array.isArray(v.domains) ? v.domains : [],
+    enabled: all.enabled !== false,
+    domains: [...addedAt.keys()].sort(),
+    addedAt,
   };
 }
 
@@ -81,22 +107,56 @@ export async function setEnabled(enabled) {
   await chrome.storage.sync.set({ enabled: !!enabled });
 }
 
-/** 정규화·중복 제거·정렬을 거쳐 저장한다. 저장된 최종 목록을 돌려준다. */
-export async function saveDomains(list) {
-  const domains = [...new Set(list.map(normalizeDomain).filter(Boolean))].sort();
-  await chrome.storage.sync.set({ domains });
-  return domains;
-}
-
 export async function addDomain(raw) {
   const domain = normalizeDomain(raw);
   if (!domain) return { ok: false, reason: 'invalid' };
+
   const { domains } = await getSettings();
   if (domains.includes(domain)) return { ok: false, reason: 'duplicate', domain };
-  return { ok: true, domain, domains: await saveDomains([...domains, domain]) };
+  if (domains.length >= MAX_DOMAINS) return { ok: false, reason: 'full', domain };
+
+  await chrome.storage.sync.set({ [DOMAIN_PREFIX + domain]: Date.now() });
+  return { ok: true, domain };
 }
 
 export async function removeDomain(domain) {
-  const { domains } = await getSettings();
-  return saveDomains(domains.filter((d) => d !== domain));
+  await chrome.storage.sync.remove(DOMAIN_PREFIX + domain);
+
+  // 아직 안 옮긴 배열에도 있으면 같이 뺀다. 안 그러면 지워도 다시 읽혀 되살아난다.
+  const stored = await chrome.storage.sync.get(LEGACY_KEY);
+  const legacy = stored[LEGACY_KEY];
+  if (Array.isArray(legacy) && legacy.includes(domain)) {
+    await chrome.storage.sync.set({ [LEGACY_KEY]: legacy.filter((d) => d !== domain) });
+  }
 }
+
+/**
+ * v1.2.0 이하의 `domains` 배열을 키 단위 저장으로 옮긴다. 없으면 아무 일도 하지 않는다.
+ * 원본은 지우기 전에 **그 기기의 로컬 저장소**에 사본을 남긴다 — 동기화를 타지 않으므로
+ * 잘못돼도 기기마다 되돌릴 근거가 남는다. 여러 기기가 각자 실행해도 결과가 같다.
+ */
+export async function migrateLegacyDomains() {
+  const stored = await chrome.storage.sync.get(LEGACY_KEY);
+  const legacy = stored[LEGACY_KEY];
+  if (!Array.isArray(legacy) || !legacy.length) return 0;
+
+  await chrome.storage.local.set({
+    legacyDomainsBackup: legacy,
+    legacyBackupAt: Date.now(),
+  });
+
+  const now = Date.now();
+  const entries = Object.fromEntries(
+    legacy.filter(Boolean).map((domain) => [DOMAIN_PREFIX + domain, now]),
+  );
+  await chrome.storage.sync.set(entries);
+  await chrome.storage.sync.remove(LEGACY_KEY);
+  return legacy.length;
+}
+
+/** 저장 구조가 바뀌었는지 화면·백그라운드가 판정할 때 쓴다. */
+export function isDomainChange(changes) {
+  return Object.keys(changes).some((k) => k.startsWith(DOMAIN_PREFIX) || k === LEGACY_KEY);
+}
+
+export const STORAGE = { DOMAIN_PREFIX, LEGACY_KEY, MAX_DOMAINS };

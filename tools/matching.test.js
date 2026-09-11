@@ -5,7 +5,19 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { hostMatches, matchedDomain, normalizeDomain } from '../src/shared.js';
+import { hostMatches, isDomainChange, matchedDomain, normalizeDomain, STORAGE } from '../src/shared.js';
+
+test('isDomainChange — 도메인 키와 옛 배열 키만 목록 변경으로 본다', () => {
+  const p = STORAGE.DOMAIN_PREFIX;
+  assert.ok(isDomainChange({ [`${p}example.com`]: {} }));
+  assert.ok(isDomainChange({ [STORAGE.LEGACY_KEY]: {} }));
+  assert.ok(isDomainChange({ enabled: {}, [`${p}a.com`]: {} }));
+
+  // 토글·통계 변경으로 스윕이 돌면 안 된다
+  assert.ok(!isDomainChange({ enabled: {} }));
+  assert.ok(!isDomainChange({ deletedCount: {} }));
+  assert.ok(!isDomainChange({}));
+});
 
 test('normalizeDomain — 사람이 넣을 법한 입력을 호스트명으로 줄인다', () => {
   const cases = {

@@ -8,7 +8,7 @@
 // onTitleChanged 는 존재하지 않는다 — 쓰면 서비스 워커가 등록 단계에서 죽는다.
 // 서비스 워커는 수시로 종료되므로 리스너 등록은 반드시 최상위에서 한다.
 
-import { getSettings, matchedDomain } from './shared.js';
+import { getSettings, isDomainChange, matchedDomain, migrateLegacyDomains } from './shared.js';
 // 주소표시줄 키워드 모드. 정적 import 라 워커 최초 평가에 포함되고,
 // 그 안의 리스너도 최상위에서 등록된다 (MV3 가 요구하는 조건).
 import './omnibox.js';
@@ -21,6 +21,11 @@ const DAY_MS = 86_400_000;
 /** 깊은 스윕이 거슬러 올라가는 기간. Chrome 기본 보존 기간(90일)보다 넉넉하게 잡는다. */
 const DEEP_SWEEP_SPAN_MS = 5 * 365 * DAY_MS;
 const DEEP_SWEEP_WINDOW_MS = 30 * DAY_MS;
+/** 주기 스윕이 텍스트 검색과 별개로 통째로 훑는 최근 구간. */
+const RECENT_SCAN_MS = 7 * DAY_MS;
+const SEARCH_LIMIT = 5_000;
+/** 창을 더 쪼개도 의미가 없어지는 하한. 이보다 좁은데도 상한을 치면 포기하고 넘어간다. */
+const MIN_WINDOW_MS = 60_000;
 
 let settingsCache = null;
 
@@ -79,8 +84,36 @@ async function handleVisit(item) {
   scheduleRecheck(item.url);
 }
 
-/** 도메인별 텍스트 검색으로 잔여 기록을 훑는다. 가볍고 자주 돌린다. */
-async function sweep() {
+/**
+ * 기간을 훑어 걸리는 URL 을 모은다.
+ * `history.search` 는 maxResults 를 넘으면 **말없이 잘라내므로**, 상한을 치면 창을 반으로
+ * 쪼개 다시 본다. 안 그러면 기록이 몰린 구간에서 오래된 것부터 조용히 빠진다.
+ */
+async function collectInRange(startTime, endTime, domains, urls) {
+  const items = await chrome.history.search({
+    text: '',
+    startTime,
+    endTime,
+    maxResults: SEARCH_LIMIT,
+  });
+
+  if (items.length >= SEARCH_LIMIT && endTime - startTime > MIN_WINDOW_MS) {
+    const mid = startTime + Math.floor((endTime - startTime) / 2);
+    await collectInRange(startTime, mid, domains, urls);
+    await collectInRange(mid, endTime, domains, urls);
+    return;
+  }
+
+  for (const item of items) {
+    if (matchedDomain(item.url, domains)) urls.add(item.url);
+  }
+}
+
+/**
+ * 도메인별 텍스트 검색 + 최근 구간 전수 훑기. 가볍고 자주 돈다.
+ * 텍스트 검색만으로는 Chrome 의 토큰화가 못 잡는 형태가 남으므로 최근 구간은 통째로 본다.
+ */
+async function runSweep() {
   const { enabled, domains } = await settings();
   if (!enabled || !domains.length) return 0;
 
@@ -89,37 +122,56 @@ async function sweep() {
     const items = await chrome.history.search({
       text: domain,
       startTime: 0,
-      maxResults: 10_000,
+      maxResults: SEARCH_LIMIT,
     });
     for (const item of items) {
       if (matchedDomain(item.url, domains)) urls.add(item.url);
     }
   }
+
+  const now = Date.now();
+  await collectInRange(now - RECENT_SCAN_MS, now, domains, urls);
+
   return deleteUrls(urls);
 }
 
 /**
- * 방문 기록 전체를 기간으로 쪼개 훑는다.
- * 텍스트 검색이 놓치는 항목(URL 인코딩·리다이렉트 등)까지 잡지만 느리므로 수동 실행 전용.
+ * 방문 기록 전체를 기간으로 쪼개 훑는다. 느리므로 수동 실행 전용.
+ * 꺼져 있으면 **지우지 않는다** — 끈 상태에서 버튼 하나로 기록이 사라지면 안 된다.
  */
-async function deepSweep() {
-  const { domains } = await settings();
-  if (!domains.length) return 0;
+async function runDeepSweep() {
+  const { enabled, domains } = await settings();
+  if (!enabled) return { skipped: 'disabled' };
+  if (!domains.length) return { deleted: 0 };
 
   const urls = new Set();
   const now = Date.now();
   for (let end = now; end > now - DEEP_SWEEP_SPAN_MS; end -= DEEP_SWEEP_WINDOW_MS) {
-    const items = await chrome.history.search({
-      text: '',
-      startTime: end - DEEP_SWEEP_WINDOW_MS,
-      endTime: end,
-      maxResults: 10_000,
-    });
-    for (const item of items) {
-      if (matchedDomain(item.url, domains)) urls.add(item.url);
-    }
+    await collectInRange(end - DEEP_SWEEP_WINDOW_MS, end, domains, urls);
   }
-  return deleteUrls(urls);
+  return { deleted: await deleteUrls(urls) };
+}
+
+// 알람·설정 변경·버튼이 동시에 부를 수 있다. 겹쳐 돌면 같은 URL 을 두 번 세어
+// "지운 기록" 통계가 부풀므로, 진행 중인 것이 있으면 그것을 함께 기다린다.
+let sweepInFlight = null;
+function sweep() {
+  if (!sweepInFlight) {
+    sweepInFlight = runSweep().finally(() => {
+      sweepInFlight = null;
+    });
+  }
+  return sweepInFlight;
+}
+
+let deepSweepInFlight = null;
+function deepSweep() {
+  if (!deepSweepInFlight) {
+    deepSweepInFlight = runDeepSweep().finally(() => {
+      deepSweepInFlight = null;
+    });
+  }
+  return deepSweepInFlight;
 }
 
 function ensureAlarm() {
@@ -128,14 +180,23 @@ function ensureAlarm() {
   });
 }
 
+async function start() {
+  ensureAlarm();
+  // 옛 배열 저장 구조를 키 단위로 옮긴다. 이미 옮겼으면 아무 일도 하지 않는다.
+  const moved = await migrateLegacyDomains().catch(() => 0);
+  if (moved) settingsCache = null;
+  await sweep().catch(() => {});
+}
+
 chrome.history.onVisited.addListener(handleVisit);
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'sync') return;
-  if (!('domains' in changes) && !('enabled' in changes)) return;
+  const domainsChanged = isDomainChange(changes);
+  if (!domainsChanged && !('enabled' in changes)) return;
   settingsCache = null;
-  // 도메인을 새로 등록했으면 그 도메인의 과거 기록도 바로 털어야 자동완성에서 사라진다.
-  if ('domains' in changes) sweep().catch(() => {});
+  // 도메인이 늘었으면(다른 기기에서 온 것 포함) 그 기록을 바로 털어야 자동완성에서 사라진다.
+  if (domainsChanged) sweep().catch(() => {});
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -143,22 +204,27 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 });
 
 chrome.runtime.onInstalled.addListener(() => {
-  ensureAlarm();
-  sweep().catch(() => {});
+  start().catch(() => {});
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  ensureAlarm();
-  sweep().catch(() => {});
+  start().catch(() => {});
 });
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-  const run = { sweep, deepSweep }[msg?.type];
-  if (!run) return false;
-  run()
-    .then((deleted) => sendResponse({ ok: true, deleted }))
-    .catch((error) => sendResponse({ ok: false, error: String(error) }));
-  return true; // 비동기 응답
+  if (msg?.type === 'sweep') {
+    sweep()
+      .then((deleted) => sendResponse({ ok: true, deleted }))
+      .catch((error) => sendResponse({ ok: false, error: String(error) }));
+    return true;
+  }
+  if (msg?.type === 'deepSweep') {
+    deepSweep()
+      .then((result) => sendResponse({ ok: true, ...result }))
+      .catch((error) => sendResponse({ ok: false, error: String(error) }));
+    return true;
+  }
+  return false;
 });
 
-ensureAlarm();
+start().catch(() => {});
