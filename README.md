@@ -12,9 +12,14 @@ Chrome 에는 "특정 도메인만 기록하지 않기" 훅이 없다. 그래서
 
 | 경로 | 언제 | 역할 |
 |---|---|---|
-| `history.onVisited` | 방문 직후 | 주 경로 |
-| `history.onTitleChanged` | 제목이 늦게 붙을 때 | Chrome 이 기록을 다시 쓰는 경우를 회수 |
-| `alarms` 5분 주기 스윕 | 주기적 | 서비스 워커가 잠들어 위 둘을 놓친 방문을 회수 |
+| `history.onVisited` | 방문 직후 | 주 경로. **이 리스너가 잠든 서비스 워커를 깨우므로** 워커가 종료돼 있어도 방문 자체는 놓치지 않는다 |
+| 지연 재확인 (1.5초 · 6초) | 삭제 직후 | Chrome 이 제목·파비콘을 붙이며 같은 URL 을 되살리는 경우를 회수 |
+| `alarms` 5분 주기 스윕 | 주기적 | 위 둘이 실패했거나 확장이 꺼져 있던 사이의 방문을 회수 |
+
+> `chrome.history` 의 이벤트는 **`onVisited` 와 `onVisitRemoved` 둘뿐**이다.
+> 기록이 되살아나는 것을 알려주는 이벤트가 없어서 지연 재확인으로 메운다.
+> 없는 API 를 부르면 서비스 워커가 등록 단계에서 통째로 죽으므로
+> (`Service worker registration failed`), 쓰는 API 는 `tools/api-surface.test.js` 로 고정해 두었다.
 
 도메인을 새로 등록하면 그 도메인의 **과거 기록도 즉시 정리**한다. 설정 화면의
 "전체 방문 기록 훑어 정리" 는 텍스트 검색이 놓치는 항목까지 찾도록 최근 5년치를 기간별로 훑는다.
@@ -54,8 +59,13 @@ node --test tools/      # 도메인 매칭 테스트
 python3 tools/make_icons.py   # 아이콘 PNG 재생성 (Pillow 필요)
 ```
 
-도메인 매칭은 되돌릴 수 없는 삭제를 좌우하므로 `src/shared.js` 한 곳에만 두고 테스트로 막아둔다.
-특히 `notblocked.example` 처럼 **접미사만 같은 남의 도메인**을 잡지 않는 것이 중요하다.
+테스트 둘이 각각 다른 종류의 사고를 막는다.
+
+- `matching.test.js` — 도메인 매칭. 되돌릴 수 없는 삭제를 좌우하므로 `src/shared.js` 한 곳에만
+  두고 고정한다. 특히 `notblocked.example` 처럼 **접미사만 같은 남의 도메인**을 잡으면 안 된다.
+- `api-surface.test.js` — 쓰는 `chrome.*` API 의 실재. 없는 API 는 확장을 로드해야만 드러나고
+  그때는 서비스 워커가 통째로 죽는다. 새 API 를 쓰려면 공식 문서에서 확인하고 화이트리스트에
+  더해야 한다.
 
 ```text
 manifest.json
@@ -66,6 +76,7 @@ src/
   options.html/js 목록 관리·전체 정리·통계
   ui.css          팝업·옵션 공용 (라이트/다크 대응)
 tools/
-  make_icons.py   아이콘 생성기
-  matching.test.js
+  make_icons.py       아이콘 생성기
+  matching.test.js    도메인 매칭
+  api-surface.test.js 쓰는 chrome API 의 실재
 ```
