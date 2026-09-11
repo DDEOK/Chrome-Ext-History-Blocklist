@@ -63,6 +63,32 @@ Chrome 에는 "특정 도메인만 기록하지 않기" 훅이 없다. 그래서
 2. 오른쪽 위 **개발자 모드** 켜기
 3. **압축해제된 확장 프로그램을 로드** → 이 저장소 폴더 선택
 
+갱신은 `git pull` 후 확장 카드의 **새로고침(↻)**. 카드의 버전 숫자가 바뀌면 반영된 것이다.
+
+### 윈도우에 내려받기
+
+비공개 저장소라 인증이 필요하다. [Git for Windows](https://git-scm.com/download/win) 가 깔려 있으면
+같이 들어오는 Git Credential Manager 가 **브라우저로 GitHub 로그인 창**을 띄운다 — 토큰을 직접
+만들 필요는 없다. PowerShell 에서:
+
+```powershell
+mkdir -Force "$env:USERPROFILE\Develop\github\ddeok" | Out-Null
+cd "$env:USERPROFILE\Develop\github\ddeok"
+git clone https://github.com/DDEOK/Chrome-History-Blocklist.git
+(Resolve-Path .\Chrome-History-Blocklist).Path   # 크롬에서 고를 경로
+```
+
+마지막 줄이 찍어준 경로를 위 3번에서 선택한다.
+
+> [!warning] **차단 목록은 기기 간에 따라오지 않는다**
+> 목록은 `chrome.storage.sync` 에 있어 같은 Chrome 계정이면 동기화되지만, **그 저장소는 확장
+> ID 단위**다. 그리고 압축해제 확장은 `manifest.json` 에 `key` 가 없으면 **ID 가 기기마다
+> 달라진다.** 그래서 윈도우에서는 **빈 목록으로 시작**한다.
+>
+> 맞추려면 확장 ID 를 고정해야 하고, 그 공개키는 Chrome 개발자 대시보드에 zip 을 올려야 나온다
+> (게시는 안 해도 된다). 그만한 가치가 없으면 양쪽에서 따로 등록하거나 목록을
+> 내보내기/가져오기로 옮긴다.
+
 ## 개발
 
 ```bash
