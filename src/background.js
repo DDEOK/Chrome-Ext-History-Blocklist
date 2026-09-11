@@ -9,6 +9,9 @@
 // 서비스 워커는 수시로 종료되므로 리스너 등록은 반드시 최상위에서 한다.
 
 import { getSettings, matchedDomain } from './shared.js';
+// 주소표시줄 키워드 모드. 정적 import 라 워커 최초 평가에 포함되고,
+// 그 안의 리스너도 최상위에서 등록된다 (MV3 가 요구하는 조건).
+import './omnibox.js';
 
 const SWEEP_ALARM = 'history-blocklist-sweep';
 const SWEEP_PERIOD_MINUTES = 5;

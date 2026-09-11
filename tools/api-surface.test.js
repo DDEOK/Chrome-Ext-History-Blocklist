@@ -18,12 +18,18 @@ const SRC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
 /** developer.chrome.com 에서 실재를 확인한 것만 (2026-09-11 확인). */
 const VERIFIED = new Set([
+  'chrome.action.setBadgeBackgroundColor',
+  'chrome.action.setBadgeText',
   'chrome.alarms.create',
   'chrome.alarms.get',
   'chrome.alarms.onAlarm',
   'chrome.history.deleteUrl',
   'chrome.history.onVisited',
   'chrome.history.search',
+  'chrome.omnibox.onInputChanged',
+  'chrome.omnibox.onInputEntered',
+  'chrome.omnibox.onInputStarted',
+  'chrome.omnibox.setDefaultSuggestion',
   'chrome.runtime.onInstalled',
   'chrome.runtime.onMessage',
   'chrome.runtime.onStartup',
@@ -35,11 +41,17 @@ const VERIFIED = new Set([
   'chrome.tabs.query',
 ]);
 
-/** manifest 에 선언한 권한으로 쓸 수 있어야 한다. activeTab 은 여기 적지 않는다(호출 시점 부여). */
+/** `permissions` 배열에 있어야 쓸 수 있는 네임스페이스. activeTab 은 호출 시점 부여라 여기 없다. */
 const PERMISSION_OF = {
   alarms: 'alarms',
   history: 'history',
   storage: 'storage',
+};
+
+/** 권한이 아니라 **manifest 최상위 키**를 선언해야 쓸 수 있는 네임스페이스. */
+const MANIFEST_KEY_OF = {
+  action: 'action',
+  omnibox: 'omnibox',
 };
 
 function usedApis() {
@@ -71,15 +83,18 @@ test('화이트리스트에 죽은 항목이 없다', () => {
   assert.deepEqual(dead, [], `이제 안 쓰는 API 다. VERIFIED 에서 지워라:\n  ${dead.join('\n  ')}`);
 });
 
-test('쓰는 API 의 권한이 manifest 에 선언돼 있다', () => {
-  const manifest = JSON.parse(
-    readFileSync(join(SRC_DIR, '..', 'manifest.json'), 'utf8'),
-  );
+test('쓰는 API 의 권한과 manifest 키가 선언돼 있다', () => {
+  const manifest = JSON.parse(readFileSync(join(SRC_DIR, '..', 'manifest.json'), 'utf8'));
   const declared = new Set(manifest.permissions ?? []);
+  const namespaces = new Set([...usedApis().keys()].map((api) => api.split('.')[1]));
 
-  const missing = [...usedApis().keys()]
-    .map((api) => PERMISSION_OF[api.split('.')[1]])
+  const missingPermissions = [...namespaces]
+    .map((ns) => PERMISSION_OF[ns])
     .filter((permission) => permission && !declared.has(permission));
+  assert.deepEqual(missingPermissions, [], 'manifest.json 의 permissions 에 빠진 권한이 있다');
 
-  assert.deepEqual([...new Set(missing)], [], 'manifest.json 의 permissions 에 빠진 권한이 있다');
+  const missingKeys = [...namespaces]
+    .map((ns) => MANIFEST_KEY_OF[ns])
+    .filter((key) => key && !(key in manifest));
+  assert.deepEqual(missingKeys, [], 'manifest.json 최상위에 빠진 키가 있다');
 });

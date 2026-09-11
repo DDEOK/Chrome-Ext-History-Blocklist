@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "description": "지정한 도메인의 방문 기록을 자동으로 삭제해 주소창 자동완성과 방문 기록에서 감춘다.",
   "permissions": ["history", "storage", "alarms", "activeTab"],
+  "omnibox": { "keyword": "hb" },
   "background": {
     "service_worker": "src/background.js",
     "type": "module"
