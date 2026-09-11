@@ -4,6 +4,9 @@
 //   2. 지연 재확인       — 삭제 직후 Chrome 이 같은 URL 을 다시 쓰는 경우를 회수
 //   3. alarms 주기 스윕  — 1·2 가 실패했거나 확장이 꺼져 있던 사이의 방문 회수
 //
+// 과거 기록은 둘로 나눠 턴다: 도메인이 새로 들어오면(직접 등록이든 동기화든) 그 도메인만
+// 전 기간 **전수** 로 한 번, 그 뒤로는 주기 스윕의 텍스트 검색이 맡는다.
+//
 // chrome.history 의 이벤트는 onVisited 와 onVisitRemoved 둘뿐이다.
 // onTitleChanged 는 존재하지 않는다 — 쓰면 서비스 워커가 등록 단계에서 죽는다.
 // 서비스 워커는 수시로 종료되므로 리스너 등록은 반드시 최상위에서 한다.
@@ -26,6 +29,8 @@ const RECENT_SCAN_MS = 7 * DAY_MS;
 const SEARCH_LIMIT = 5_000;
 /** 창을 더 쪼개도 의미가 없어지는 하한. 이보다 좁은데도 상한을 치면 포기하고 넘어간다. */
 const MIN_WINDOW_MS = 60_000;
+/** 전수 스캔을 마친 도메인 표(`storage.local`, 기기별). `{ [domain]: 마친 시각 }` */
+const FULL_SCAN_KEY = 'fullScanned';
 
 let settingsCache = null;
 
@@ -109,9 +114,47 @@ async function collectInRange(startTime, endTime, domains, urls) {
   }
 }
 
+/** 전 기간을 창으로 쪼개 훑는다. 대상 도메인만 본다. */
+async function scanAllTime(domains) {
+  const urls = new Set();
+  const now = Date.now();
+  for (let end = now; end > now - DEEP_SWEEP_SPAN_MS; end -= DEEP_SWEEP_WINDOW_MS) {
+    await collectInRange(end - DEEP_SWEEP_WINDOW_MS, end, domains, urls);
+  }
+  return deleteUrls(urls);
+}
+
+/**
+ * 아직 전수 스캔을 안 거친 도메인이 있으면 그것만 골라 한 번 훑는다.
+ *
+ * 텍스트 검색은 Chrome 의 토큰화에 기대므로 못 잡는 형태가 남는다. "등록하면 과거 기록도
+ * 정리된다"가 참이려면 **도메인이 새로 들어온 순간 한 번은 전수로** 봐야 하고, 그 도메인이
+ * 다른 기기에서 동기화로 들어온 경우도 마찬가지다(그 기기에는 그 도메인 기록이 쌓여 있다).
+ *
+ * 마친 표시는 **끝난 뒤에** 남긴다 — 중간에 서비스 워커가 죽으면 표시가 안 되고 다음 주기
+ * 스윕이 다시 시도한다. 기기별 상태라 `storage.local` 에 둔다(동기화를 타면 안 된다).
+ */
+async function catchUpFullScan(domains) {
+  const stored = await chrome.storage.local.get({ [FULL_SCAN_KEY]: {} });
+  const done = stored[FULL_SCAN_KEY] ?? {};
+  const pending = domains.filter((d) => !done[d]);
+  if (!pending.length) return 0;
+
+  const deleted = await scanAllTime(pending);
+
+  const next = {};
+  for (const domain of domains) {
+    next[domain] = done[domain] ?? Date.now(); // 목록에서 빠진 도메인은 표에서도 지운다
+  }
+  for (const domain of pending) next[domain] = Date.now();
+  await chrome.storage.local.set({ [FULL_SCAN_KEY]: next });
+
+  return deleted;
+}
+
 /**
  * 도메인별 텍스트 검색 + 최근 구간 전수 훑기. 가볍고 자주 돈다.
- * 텍스트 검색만으로는 Chrome 의 토큰화가 못 잡는 형태가 남으므로 최근 구간은 통째로 본다.
+ * 새로 들어온 도메인이 있으면 그것만 전 기간 전수로 한 번 더 본다.
  */
 async function runSweep() {
   const { enabled, domains } = await settings();
@@ -132,7 +175,8 @@ async function runSweep() {
   const now = Date.now();
   await collectInRange(now - RECENT_SCAN_MS, now, domains, urls);
 
-  return deleteUrls(urls);
+  const deleted = await deleteUrls(urls);
+  return deleted + (await catchUpFullScan(domains));
 }
 
 /**
@@ -144,12 +188,14 @@ async function runDeepSweep() {
   if (!enabled) return { skipped: 'disabled' };
   if (!domains.length) return { deleted: 0 };
 
-  const urls = new Set();
+  const deleted = await scanAllTime(domains);
+
+  // 전부 훑었으니 자동 전수 스캔 대기 목록도 비운다.
   const now = Date.now();
-  for (let end = now; end > now - DEEP_SWEEP_SPAN_MS; end -= DEEP_SWEEP_WINDOW_MS) {
-    await collectInRange(end - DEEP_SWEEP_WINDOW_MS, end, domains, urls);
-  }
-  return { deleted: await deleteUrls(urls) };
+  await chrome.storage.local.set({
+    [FULL_SCAN_KEY]: Object.fromEntries(domains.map((d) => [d, now])),
+  });
+  return { deleted };
 }
 
 // 알람·설정 변경·버튼이 동시에 부를 수 있다. 겹쳐 돌면 같은 URL 을 두 번 세어
