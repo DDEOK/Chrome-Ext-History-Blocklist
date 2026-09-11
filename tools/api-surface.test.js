@@ -30,6 +30,7 @@ const VERIFIED = new Set([
   'chrome.omnibox.onInputEntered',
   'chrome.omnibox.onInputStarted',
   'chrome.omnibox.setDefaultSuggestion',
+  'chrome.runtime.getManifest',
   'chrome.runtime.onInstalled',
   'chrome.runtime.onMessage',
   'chrome.runtime.onStartup',

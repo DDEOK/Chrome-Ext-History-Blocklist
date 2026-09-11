@@ -10,7 +10,11 @@ const el = {
   deepSweep: document.getElementById('deep-sweep'),
   sweepResult: document.getElementById('sweep-result'),
   stats: document.getElementById('stats'),
+  version: document.getElementById('version'),
 };
+
+// 압축해제 로드는 버전이 안 바뀌면 새로고침이 먹었는지 화면으로 구별할 수 없다.
+el.version.textContent = `v${chrome.runtime.getManifest().version}`;
 
 function say(text, kind = '') {
   el.status.textContent = text;

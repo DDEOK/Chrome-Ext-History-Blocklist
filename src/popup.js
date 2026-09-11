@@ -14,7 +14,11 @@ const el = {
   status: document.getElementById('status'),
   stats: document.getElementById('stats'),
   options: document.getElementById('open-options'),
+  version: document.getElementById('version'),
 };
+
+// 압축해제 로드는 버전이 안 바뀌면 새로고침이 먹었는지 화면으로 구별할 수 없다.
+el.version.textContent = `v${chrome.runtime.getManifest().version}`;
 
 /** 현재 탭의 호스트명. http/https 가 아니면 null. */
 let currentHost = null;

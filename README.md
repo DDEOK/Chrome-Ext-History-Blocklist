@@ -66,9 +66,16 @@ Chrome 에는 "특정 도메인만 기록하지 않기" 훅이 없다. 그래서
 ## 개발
 
 ```bash
-node --test tools/      # 도메인 매칭 테스트
+node --test tools/            # 전체 테스트
 python3 tools/make_icons.py   # 아이콘 PNG 재생성 (Pillow 필요)
 ```
+
+### `src/` 를 고치면 버전을 올린다
+
+압축해제로 로드한 확장은 **버전이 "지금 도는 게 어느 코드인가"를 알려주는 유일한 표시**다.
+버전을 그대로 두고 고치면 `chrome://extensions` 카드가 안 변해서 새로고침이 먹었는지 알 수 없다.
+`manifest.json` 과 `package.json` 을 같이 올리고 [CHANGELOG](CHANGELOG.md) 에 적는다 —
+`tools/manifest.test.js` 가 안 올렸을 때 실패한다. 팝업·설정 화면 머리에도 로드된 버전이 뜬다.
 
 테스트 둘이 각각 다른 종류의 사고를 막는다.
 
@@ -77,6 +84,7 @@ python3 tools/make_icons.py   # 아이콘 PNG 재생성 (Pillow 필요)
 - `api-surface.test.js` — 쓰는 `chrome.*` API 의 실재. 없는 API 는 확장을 로드해야만 드러나고
   그때는 서비스 워커가 통째로 죽는다. 새 API 를 쓰려면 공식 문서에서 확인하고 화이트리스트에
   더해야 한다.
+- `manifest.test.js` — 버전. `src/` 를 고치고 버전을 안 올리면 실패한다 (아래).
 
 ```text
 manifest.json
@@ -91,4 +99,5 @@ tools/
   make_icons.py       아이콘 생성기
   matching.test.js    도메인 매칭
   api-surface.test.js 쓰는 chrome API 의 실재
+  manifest.test.js    버전 갱신·형식
 ```
