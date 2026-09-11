@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>History Blocklist</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body {
+        width: 300px;
+        padding: 12px;
+      }
+
+      header {
+        margin-bottom: 12px;
+      }
+
+      .site {
+        padding: 10px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-sunken);
+      }
+
+      .site .host {
+        overflow: hidden;
+        margin-bottom: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      footer {
+        display: flex;
+        align-items: center;
+        margin-top: 12px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="row">
+      <h1>History Blocklist</h1>
+      <span class="spacer"></span>
+      <label class="switch" title="전체 켜기/끄기">
+        <input type="checkbox" id="enabled" />
+        <span class="track"><span class="thumb"></span></span>
+      </label>
+    </header>
+
+    <div class="site">
+      <div class="host mono" id="host">읽는 중…</div>
+      <button id="toggle" class="primary" disabled>—</button>
+    </div>
+
+    <p class="status" id="status"></p>
+
+    <footer>
+      <span class="dim" id="stats"></span>
+      <span class="spacer"></span>
+      <button class="link" id="open-options">설정</button>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

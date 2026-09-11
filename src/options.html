@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>History Blocklist 설정</title>
+    <link rel="stylesheet" href="ui.css" />
+    <style>
+      body {
+        max-width: 620px;
+        margin: 0 auto;
+        padding: 28px 20px 60px;
+      }
+
+      header {
+        margin-bottom: 6px;
+      }
+
+      header h1 {
+        font-size: 20px;
+      }
+
+      .lede {
+        margin: 0 0 24px;
+        color: var(--text-dim);
+      }
+
+      section {
+        margin-bottom: 28px;
+      }
+
+      form.add {
+        margin-bottom: 10px;
+      }
+
+      .list li .domain {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .note {
+        margin: 8px 0 0;
+        color: var(--text-dim);
+        font-size: 12px;
+      }
+
+      .note ul {
+        margin: 6px 0 0;
+        padding-left: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="row">
+      <h1>History Blocklist</h1>
+      <span class="spacer"></span>
+      <label class="switch">
+        <input type="checkbox" id="enabled" />
+        <span class="track"><span class="thumb"></span></span>
+        <span id="enabled-label" class="dim"></span>
+      </label>
+    </header>
+    <p class="lede">
+      등록한 도메인과 그 서브도메인의 방문 기록을 방문 즉시 지운다. 주소창 자동완성과
+      <span class="mono">chrome://history</span> 양쪽에서 사라진다.
+    </p>
+
+    <section>
+      <h2>차단 도메인</h2>
+      <form class="add row" id="add-form">
+        <input
+          type="text"
+          id="domain-input"
+          placeholder="example.com"
+          autocomplete="off"
+          spellcheck="false"
+          class="mono"
+        />
+        <button type="submit" class="primary">추가</button>
+      </form>
+      <p class="status" id="status"></p>
+      <ul class="list" id="list"></ul>
+      <p class="note">
+        URL 을 통째로 붙여 넣어도 도메인만 뽑아 저장한다.
+        <span class="mono">example.com</span> 을 넣으면
+        <span class="mono">www.example.com</span> ·
+        <span class="mono">m.example.com</span> 도 함께 걸린다.
+      </p>
+    </section>
+
+    <section>
+      <h2>과거 기록 정리</h2>
+      <div class="row">
+        <button id="deep-sweep">전체 방문 기록 훑어 정리</button>
+        <span class="dim" id="sweep-result"></span>
+      </div>
+      <p class="note">
+        도메인을 추가하면 그 도메인의 과거 기록은 자동으로 정리된다. 이 버튼은 그것이 놓친 항목까지
+        찾도록 최근 5년치 방문 기록을 기간별로 훑는다 — 기록이 많으면 수십 초 걸린다.
+      </p>
+    </section>
+
+    <section>
+      <h2>알아둘 것</h2>
+      <p class="note">
+        이 확장은 <strong>기록을 막는 것이 아니라 기록된 직후 지운다.</strong> Chrome 에는 특정
+        도메인만 기록하지 않게 하는 기능이 없다. 그래서 다음은 한계다.
+      </p>
+      <div class="note">
+        <ul>
+          <li>기록 → 삭제 사이 수백 ms 동안은 방문 기록에 남아 있다.</li>
+          <li>북마크·쿠키·로그인 세션·캐시·저장된 비밀번호는 건드리지 않는다.</li>
+          <li>주소창에 뜨는 <strong>검색 엔진 제안</strong>은 서버가 주는 것이라 막을 수 없다.</li>
+          <li>Chrome 동기화를 켜두었으면 다른 기기에도 삭제가 전파되기까지 시차가 있다.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section>
+      <h2>통계</h2>
+      <p class="note mono" id="stats"></p>
+    </section>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
