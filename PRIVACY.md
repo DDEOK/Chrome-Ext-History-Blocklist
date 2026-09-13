@@ -44,12 +44,12 @@ domains the user selects — and is never transferred, sold, or used for adverti
 
 ## Source code
 
-The extension is open source: <https://github.com/DDEOK/Chrome-History-Blocklist>
+The extension is open source: <https://github.com/DDEOK/Chrome-Ext-History-Blocklist>
 
 ## Contact
 
 Questions or reports: open an issue at
-<https://github.com/DDEOK/Chrome-History-Blocklist/issues>
+<https://github.com/DDEOK/Chrome-Ext-History-Blocklist/issues>
 
 ---
 
@@ -91,4 +91,4 @@ _최종 수정: 2026-09-13_
 
 ## 문의
 
-<https://github.com/DDEOK/Chrome-History-Blocklist/issues>
+<https://github.com/DDEOK/Chrome-Ext-History-Blocklist/issues>

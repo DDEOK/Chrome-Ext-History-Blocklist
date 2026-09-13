@@ -11,6 +11,8 @@ your history.
 **No network requests. No host permissions. No content scripts. No analytics.**
 See [PRIVACY.md](PRIVACY.md).
 
+Source: <https://github.com/DDEOK/Chrome-Ext-History-Blocklist> · [MIT](LICENSE)
+
 ## How it works
 
 Chrome has no hook for "don't record this domain." So this extension is not a blocker but a
