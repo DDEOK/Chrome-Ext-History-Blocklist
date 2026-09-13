@@ -6,7 +6,6 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -15,27 +14,16 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (name) => JSON.parse(readFileSync(join(ROOT, name), 'utf8'));
 
-/**
- * 세 기기가 같은 `chrome.storage.sync` 통을 쓰려면 확장 ID 가 같아야 하고,
- * ID 는 manifest 의 `key` 에서만 나온다. 이 값이 바뀌면 **설정이 조용히 사라진 것처럼**
- * 보이므로(옛 ID 통에 남는다) 상수로 못박는다.
- */
-const EXPECTED_ID = 'jhkhlikcigccmladmjnknhfijmjlnccc';
-const HEX_TO_ALPHA = { ...Object.fromEntries([...'0123456789abcdef'].map((c, i) => [c, 'abcdefghijklmnop'[i]])) };
-
-function extensionId(keyB64) {
-  const digest = createHash('sha256').update(Buffer.from(keyB64, 'base64')).digest('hex');
-  return [...digest.slice(0, 32)].map((c) => HEX_TO_ALPHA[c]).join('');
-}
 
 test('manifest.json 과 package.json 의 버전이 같다', () => {
   assert.equal(read('manifest.json').version, read('package.json').version);
 });
 
-test('확장 ID 가 고정돼 있다 — 기기 간 설정 동기화의 전제', () => {
-  const { key } = read('manifest.json');
-  assert.ok(key, 'manifest 에 key 가 없으면 ID 가 설치 경로에서 나와 기기마다 달라진다');
-  assert.equal(extensionId(key), EXPECTED_ID);
+test('공개 저장소에 확장 ID 를 고정해 두지 않는다', () => {
+  // `key` 는 **그 저장소를 만든 사람의 신원**이다. 공개 저장소에 두면 클론한 사람이
+  // 전부 같은 확장 ID 를 물려받는다. 자기 기기끼리 설정을 동기화하려는 사람은
+  // tools/extension_id.py 안내대로 각자 키를 만들어 로컬에서만 넣는다.
+  assert.ok(!('key' in read('manifest.json')), 'manifest 에 key 가 들어갔다');
 });
 
 test('_locales 가 default_locale 과 맞고, 언어마다 키가 같다', () => {

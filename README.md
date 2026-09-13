@@ -88,7 +88,7 @@ how you confirm the reload took effect.
 |---|---|
 | **The extension itself** | Not synced. Chrome only syncs extensions installed from the Web Store — clone and load unpacked on each device |
 | **Code updates** | `git pull` + ↻ on each device |
-| **The blocked-domain list** | **Synced** through `chrome.storage.sync`, if you are signed into the same Chrome account |
+| **The blocked-domain list** | Stored in `chrome.storage.sync`, but **not shared between unpacked installs** — see below |
 
 The list is stored as **one key per domain** (`d:example.com` → the time it was added). Holding the
 whole list in a single key would lose data: `chrome.storage.sync` keeps only the last write per key,
@@ -96,13 +96,16 @@ so two devices each adding a domain would erase one another's addition. Splittin
 server merge them — and removes the need for conflict-resolution timestamps. The limit is 512 items
 (`MAX_ITEMS`); adding is refused at 480.
 
-List sync requires **the same extension ID on every device**. An unpacked extension derives its ID
-from the install path unless `manifest.json` carries a `key`, so this repository pins one. The `key`
-is a public key and is safe to publish. `python3 tools/extension_id.py` recomputes the ID from it.
+`chrome.storage.sync` is scoped **per extension ID**, and an unpacked extension derives its ID from
+its install path — different on every machine. So the list does not travel between unpacked
+installs. Installing from the Chrome Web Store fixes this: the store assigns one ID, identical
+everywhere.
 
-> Changing `key` makes the existing list **look deleted** — the old ID's `storage.sync` bucket is no
-> longer read, and there is no way to reach it. `tools/manifest.test.js` pins the resulting ID so it
-> cannot change by accident.
+> If you want your own unpacked installs to share a list, pin the ID yourself by adding a `key` to
+> `manifest.json` — `tools/extension_id.py` explains how and computes the resulting ID.
+> **Do not commit that key**: a `key` is the identity of whoever created it, so a public repository
+> shipping one would hand the same extension ID to everybody who clones it. That is why this
+> repository has none, and `tools/manifest.test.js` fails if one appears.
 
 ## Development
 

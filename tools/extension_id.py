@@ -1,9 +1,21 @@
 #!/usr/bin/env python3
 """manifest.json 의 `key` 로부터 확장 ID 를 계산한다.
 
-압축해제 확장은 `key` 가 없으면 **설치 경로**에서 ID 가 나와 기기마다 달라지고,
-`chrome.storage.sync` 가 확장 ID 단위라 설정이 기기 간에 안 따라온다.
-`key` 를 박으면 경로와 무관하게 ID 가 고정된다 — 그 ID 가 무엇이 될지 미리 알려준다.
+압축해제 확장의 ID 는 **설치 경로**에서 나오므로 기기마다 다르다. `chrome.storage.sync` 는
+확장 ID 단위라, 그래서 압축해제로 쓰면 **차단 목록이 기기 간에 따라오지 않는다.**
+
+자기 기기끼리 목록을 공유하고 싶으면 `manifest.json` 에 `key`(공개키)를 넣어 ID 를 고정하면
+된다. 이 저장소는 그렇게 하지 않는다 — **`key` 는 그것을 만든 사람의 신원**이라, 공개 저장소에
+두면 클론한 사람이 전부 같은 ID 를 쓰게 된다.
+
+직접 고정하려면 (이 저장소에는 커밋하지 말 것):
+
+    openssl genrsa -out key.pem 2048
+    openssl rsa -in key.pem -pubout -outform DER | openssl base64 -A
+
+나온 문자열을 `manifest.json` 의 `"key"` 에 넣고 이 스크립트로 ID 를 확인한다. 모든 기기에
+같은 값을 넣어야 목록이 공유된다. 웹스토어에서 설치하면 스토어가 발급한 ID 가 기기 간에
+같으므로 이 작업이 필요 없다.
 
 ID 규칙: 공개키(DER)의 SHA-256 앞 16바이트를 16진수로 쓰고, 각 자리를 0→a … f→p 로 옮긴다.
 
@@ -31,7 +43,8 @@ def main() -> int:
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
     key = manifest.get("key")
     if not key:
-        print("manifest.json 에 key 가 없다 — ID 가 설치 경로에서 나오므로 기기마다 다르다.")
+        print("manifest.json 에 key 가 없다 — ID 는 설치 경로에서 나오고 기기마다 다르다.")
+        print("(의도한 기본값이다. 자기 기기끼리 목록을 공유하려면 이 파일 첫머리 안내를 볼 것)")
         return 1
 
     print(extension_id(key))

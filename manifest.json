@@ -1,10 +1,8 @@
 {
   "manifest_version": 3,
   "name": "__MSG_appName__",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "default_locale": "en",
-  "_comment_key": "압축해제 로드에서 확장 ID 를 고정해 기기 간 설정 동기화를 유지한다. 공개키라 공개돼도 무해하다. 웹스토어는 자체 키를 발급하므로 tools/package.py 가 스토어용 zip 에서 이 필드를 뺀다.",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlT2W1B38hbLzT+DzJ2CEdwRBl7zQlVz/Ae3B4bYd3VNSDs5+UoJjGPFnsb2OL8ui5v5blOH3tlpWMdT9Dg1qpSPpdLUuN36SKr9APl2LlBRQMFCAlEW1/qkCU3kCvzJgznS+xs0QCwPgI/eC9wl8sTEmh2FTIO86P1jgkm2pW1VFuVJQmszOhD0C00sHN+s8i9lkYdhld/f7wPmoC3UrMCW7kMI4aG5aANr49FU85Ah3BTNYzUj/5rkKWECzAiNXS3wdAt+dWwQPOdzYJ3HjhsBmupkhDCqQ4G58bPzvNU9iQ7U3iOV6ghI8VrBl86L4ClIPTuRev12Y96UiYMa3AwIDAQAB",
   "description": "__MSG_appDesc__",
   "permissions": ["history", "storage", "alarms", "activeTab"],
   "omnibox": { "keyword": "hb" },
