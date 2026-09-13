@@ -202,6 +202,13 @@ sites do not appear in address bar autocomplete or in chrome://history.
 | 상태 | **검토 대기 중** |
 | 스토어 확장 ID | `igdgdlihohidgldoodpoljhbhgmdpbol` |
 | 스토어 주소 (승인 후) | `https://chromewebstore.google.com/detail/igdgdlihohidgldoodpoljhbhgmdpbol` |
+| 데이터 신고 | **웹 기록 하나만** 체크 · 확인 3개 전부 체크 |
+| 등록 계정 | 개인 Google 계정 (회사 Workspace 아님 — 이메일은 영영 못 바꾼다) |
+| 개인정보처리방침 | 공개 저장소의 `PRIVACY.md` — **저장소를 비공개로 돌리면 URL 이 죽고 정책 위반이 된다** |
+
+패키지 실측(제출본 기준): 파일 16개(`src`·`icons`·`_locales`·`manifest` 만) · `key` 없음 ·
+호스트 권한 없음 · 콘텐트 스크립트 없음 · 원격 코드 없음 · `_locales` 양쪽 55키 일치.
+**스토어가 위 ID 를 새로 발급한 것이 zip 에 `key` 가 없었다는 증거다.**
 
 **이 ID 는 저장소의 것과 다르다.** 압축해제로 로드한 확장과 스토어판은 크롬 입장에서 **서로 다른
 확장**이고, `chrome.storage.sync` 통도 따로다. 승인되면 세 기기 모두 스토어판으로 갈아타야
