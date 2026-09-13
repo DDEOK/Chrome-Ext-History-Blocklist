@@ -1,0 +1,139 @@
+{
+  "appName": { "message": "History Blocklist" },
+  "appDesc": {
+    "message": "지정한 도메인의 방문 기록을 자동으로 삭제해 주소창 자동완성과 방문 기록에서 감춥니다."
+  },
+
+  "loadedVersion": { "message": "로드된 버전" },
+  "toggleAllTitle": { "message": "전체 켜기/끄기" },
+  "on": { "message": "켜짐" },
+  "off": { "message": "꺼짐" },
+  "loading": { "message": "읽는 중…" },
+  "settings": { "message": "설정" },
+
+  "notApplicableTab": { "message": "이 탭은 대상이 아님" },
+  "blockHost": {
+    "message": "$HOST$ 차단",
+    "placeholders": { "host": { "content": "$1", "example": "example.com" } }
+  },
+  "unblockHost": {
+    "message": "$HOST$ 차단 해제",
+    "placeholders": { "host": { "content": "$1", "example": "example.com" } }
+  },
+  "coveredByParent": {
+    "message": "상위 도메인 $DOMAIN$ 규칙에 걸려 있습니다.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "blockedNow": {
+    "message": "$DOMAIN$ 차단. 과거 기록도 정리하고 있습니다.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "unblockedNow": {
+    "message": "$DOMAIN$ 차단 해제. 이후 방문부터 기록이 남습니다.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "removedNow": {
+    "message": "$DOMAIN$ 삭제. 이후 방문부터 기록이 남습니다.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "addedNow": {
+    "message": "$DOMAIN$ 추가. 과거 기록도 정리하고 있습니다.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "turnedOn": { "message": "켰습니다." },
+  "turnedOff": { "message": "껐습니다. 기록이 그대로 남습니다." },
+
+  "errInvalid": { "message": "도메인으로 읽을 수 없는 입력입니다." },
+  "errDuplicate": {
+    "message": "$DOMAIN$ 은(는) 이미 등록돼 있습니다.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "errFull": {
+    "message": "저장 한도에 걸렸습니다 — chrome.storage.sync 는 항목 512개까지입니다. 안 쓰는 도메인을 지우세요."
+  },
+
+  "popupStats": {
+    "message": "지운 기록 $COUNT$건 · 등록 $TOTAL$개",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1,204" },
+      "total": { "content": "$2", "example": "6" }
+    }
+  },
+
+  "optionsTitle": { "message": "History Blocklist 설정" },
+  "lede": {
+    "message": "등록한 도메인과 그 서브도메인의 방문 기록을 방문 즉시 지웁니다. 주소창 자동완성과 <span class=\"mono\">chrome://history</span> 양쪽에서 사라집니다."
+  },
+
+  "secDomains": { "message": "차단 도메인" },
+  "add": { "message": "추가" },
+  "remove": { "message": "삭제" },
+  "listEmpty": { "message": "등록된 도메인이 없습니다." },
+  "migratedNoDate": { "message": "옮겨온 항목 — 추가 시점 기록 없음" },
+  "domainsNote": {
+    "message": "URL 을 통째로 붙여 넣어도 도메인만 뽑아 저장합니다. <span class=\"mono\">example.com</span> 을 넣으면 <span class=\"mono\">www.example.com</span> · <span class=\"mono\">m.example.com</span> 도 함께 걸립니다."
+  },
+
+  "secOmnibox": { "message": "주소표시줄에서 바로 차단" },
+  "omniboxNote": {
+    "message": "주소표시줄에 <span class=\"mono\">hb</span> 를 치고 <kbd>Tab</kbd>(또는 <kbd>Space</kbd>)을 누르면 왼쪽에 <strong>History Blocklist</strong> 칩이 붙습니다. 이어서 도메인을 치고 <kbd>Enter</kbd> 하면 차단되고, 이미 등록된 도메인이면 해제됩니다. 등록된 도메인은 목록으로도 떠서 골라 해제할 수 있습니다."
+  },
+  "omniboxBullet1": {
+    "message": "결과는 툴바 아이콘의 배지로 알립니다 — <span class=\"mono\">＋</span> 차단 · <span class=\"mono\">－</span> 해제 · <span class=\"mono\">!</span> 도메인으로 못 읽음"
+  },
+  "omniboxBullet2": {
+    "message": "키워드를 바꾸려면 <span class=\"mono\">manifest.json</span> 의 <span class=\"mono\">omnibox.keyword</span> 를 고칩니다"
+  },
+
+  "secCleanup": { "message": "과거 기록 정리" },
+  "deepSweepButton": { "message": "전체 방문 기록 훑어 정리" },
+  "sweepRunning": { "message": "훑는 중…" },
+  "sweepDeleted": {
+    "message": "$COUNT$건 삭제",
+    "placeholders": { "count": { "content": "$1", "example": "42" } }
+  },
+  "sweepDisabled": { "message": "꺼져 있어 실행하지 않았습니다 — 먼저 켜세요." },
+  "sweepFailed": {
+    "message": "실패: $ERROR$",
+    "placeholders": { "error": { "content": "$1", "example": "응답 없음" } }
+  },
+  "cleanupNote1": {
+    "message": "<strong>도메인이 새로 들어오면 그 도메인의 과거 기록은 자동으로 전수 정리됩니다</strong> — 직접 등록했든 다른 기기에서 동기화로 들어왔든 같습니다. 한 번 끝낸 도메인은 다시 훑지 않고, 이후로는 5분 주기 스윕이 맡습니다."
+  },
+  "cleanupNote2": {
+    "message": "이 버튼은 <strong>등록된 모든 도메인을 다시 전수로</strong> 훑습니다. 평소에는 누를 일이 없고, 자동 스캔이 도중에 끊겼다고 의심될 때 씁니다 — 기록이 많으면 수십 초 걸립니다."
+  },
+
+  "secLimits": { "message": "알아둘 것" },
+  "limitsIntro": {
+    "message": "이 확장은 <strong>기록을 막는 것이 아니라 기록된 직후 지웁니다.</strong> Chrome 에는 특정 도메인만 기록하지 않게 하는 기능이 없습니다. 그래서 다음은 한계입니다."
+  },
+  "limit1": { "message": "기록 → 삭제 사이 수백 ms 동안은 방문 기록에 남아 있습니다." },
+  "limit2": { "message": "북마크·쿠키·로그인 세션·캐시·저장된 비밀번호는 건드리지 않습니다." },
+  "limit3": { "message": "주소창에 뜨는 <strong>검색 엔진 제안</strong>은 서버가 주는 것이라 막을 수 없습니다." },
+  "limit4": { "message": "Chrome 동기화를 켜두었으면 다른 기기에 삭제가 전파되기까지 시차가 있습니다." },
+
+  "secStats": { "message": "통계" },
+  "statsLine": {
+    "message": "지운 기록 $COUNT$건 · 마지막 삭제 $WHEN$",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1,204" },
+      "when": { "content": "$2", "example": "2026-09-13 10:00" }
+    }
+  },
+  "statsNever": { "message": "없음" },
+
+  "omniDefault": { "message": "<dim>History Blocklist</dim> 차단하거나 해제할 도메인을 입력하세요" },
+  "omniWillBlock": {
+    "message": "<match>$DOMAIN$</match> <dim>차단</dim> — 서브도메인 포함, 과거 기록도 정리합니다",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "omniWillUnblock": {
+    "message": "<match>$DOMAIN$</match> 차단 <dim>해제</dim> — 이후 방문부터 기록이 남습니다",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "omniSuggestUnblock": {
+    "message": "<dim>해제</dim> <match>$DOMAIN$</match>",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  }
+}

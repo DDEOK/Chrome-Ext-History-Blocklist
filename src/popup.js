@@ -1,3 +1,4 @@
+import { localizeDocument, t } from './i18n.js';
 import {
   addDomain,
   getSettings,
@@ -6,6 +7,8 @@ import {
   removeDomain,
   setEnabled,
 } from './shared.js';
+
+localizeDocument();
 
 const el = {
   enabled: document.getElementById('enabled'),
@@ -45,12 +48,15 @@ async function render() {
   const [{ enabled, domains }, { deletedCount }] = await Promise.all([getSettings(), getStats()]);
 
   el.enabled.checked = enabled;
-  el.stats.textContent = `지운 기록 ${deletedCount.toLocaleString('ko-KR')}건 · 등록 ${domains.length}개`;
+  el.stats.textContent = t('popupStats', [
+    deletedCount.toLocaleString(),
+    String(domains.length),
+  ]);
 
   coveringDomain = currentHost ? (domains.find((d) => hostMatches(currentHost, d)) ?? null) : null;
 
   if (!currentHost) {
-    el.host.textContent = '이 탭은 대상이 아님';
+    el.host.textContent = t('notApplicableTab');
     el.toggle.textContent = '—';
     el.toggle.disabled = true;
     return;
@@ -61,34 +67,29 @@ async function render() {
   el.toggle.disabled = false;
 
   if (!coveringDomain) {
-    el.toggle.textContent = `${currentHost} 차단`;
+    el.toggle.textContent = t('blockHost', [currentHost]);
     el.toggle.classList.add('primary');
     return;
   }
 
   el.toggle.classList.remove('primary');
-  el.toggle.textContent =
-    coveringDomain === currentHost ? `${currentHost} 차단 해제` : `${coveringDomain} 차단 해제`;
-  if (coveringDomain !== currentHost) {
-    say(`상위 도메인 ${coveringDomain} 규칙에 걸려 있다.`);
-  }
+  el.toggle.textContent = t('unblockHost', [coveringDomain]);
+  if (coveringDomain !== currentHost) say(t('coveredByParent', [coveringDomain]));
 }
 
 el.toggle.addEventListener('click', async () => {
   el.toggle.disabled = true;
   if (coveringDomain) {
-    await removeDomain(coveringDomain);
-    say(`${coveringDomain} 차단 해제. 이후 방문부터 기록이 남는다.`, 'ok');
+    const removed = coveringDomain;
+    await removeDomain(removed);
+    say(t('unblockedNow', [removed]), 'ok');
   } else {
     const result = await addDomain(currentHost);
-    const failure = {
-      duplicate: '이미 등록돼 있다.',
-      full: '저장 한도(512개)에 걸렸다. 설정에서 안 쓰는 도메인을 지워라.',
-    };
+    const failure = { duplicate: 'errDuplicate', full: 'errFull' };
     say(
       result.ok
-        ? `${result.domain} 차단. 과거 기록도 정리 중이다.`
-        : (failure[result.reason] ?? '올바른 도메인이 아니다.'),
+        ? t('blockedNow', [result.domain])
+        : t(failure[result.reason] ?? 'errInvalid', [result.domain ?? currentHost]),
       result.ok ? 'ok' : 'error',
     );
   }
@@ -97,7 +98,7 @@ el.toggle.addEventListener('click', async () => {
 
 el.enabled.addEventListener('change', async () => {
   await setEnabled(el.enabled.checked);
-  say(el.enabled.checked ? '켰다.' : '껐다. 기록이 그대로 남는다.', el.enabled.checked ? 'ok' : '');
+  say(t(el.enabled.checked ? 'turnedOn' : 'turnedOff'), el.enabled.checked ? 'ok' : '');
 });
 
 el.options.addEventListener('click', () => chrome.runtime.openOptionsPage());

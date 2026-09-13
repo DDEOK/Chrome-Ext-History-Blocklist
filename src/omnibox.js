@@ -4,6 +4,7 @@
 // 결과를 알릴 창이 없어서(알림은 notifications 권한이 필요하다) 툴바 배지를 잠깐 띄운다.
 // 배지는 "action" manifest 키만으로 되고 추가 권한이 없다.
 
+import { t } from './i18n.js';
 import {
   addDomain,
   getSettings,
@@ -37,21 +38,17 @@ function flashBadge(kind) {
 /** 입력 문자열에 대해 "지금 누르면 무슨 일이 일어나는가" 를 한 줄로. */
 async function describe(input) {
   const domain = normalizeDomain(input);
-  if (!domain) {
-    return '<dim>History Blocklist</dim> 차단하거나 해제할 도메인을 입력하세요';
-  }
+  if (!domain) return t('omniDefault');
 
   const { domains } = await getSettings();
   const covering = domains.find((d) => hostMatches(domain, d));
   return covering
-    ? `<match>${escapeXml(covering)}</match> 차단 <dim>해제</dim> — 이후 방문부터 기록이 남는다`
-    : `<match>${escapeXml(domain)}</match> <dim>차단</dim> — 서브도메인 포함, 과거 기록도 정리한다`;
+    ? t('omniWillUnblock', [escapeXml(covering)])
+    : t('omniWillBlock', [escapeXml(domain)]);
 }
 
 chrome.omnibox.onInputStarted.addListener(() => {
-  chrome.omnibox.setDefaultSuggestion({
-    description: '<dim>History Blocklist</dim> 차단하거나 해제할 도메인을 입력하세요',
-  });
+  chrome.omnibox.setDefaultSuggestion({ description: t('omniDefault') });
 });
 
 chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
@@ -66,7 +63,7 @@ chrome.omnibox.onInputChanged.addListener(async (input, suggest) => {
       .slice(0, 8)
       .map((d) => ({
         content: d,
-        description: `<dim>해제</dim> <match>${escapeXml(d)}</match>`,
+        description: t('omniSuggestUnblock', [escapeXml(d)]),
       })),
   );
 });

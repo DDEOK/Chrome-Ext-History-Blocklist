@@ -1,0 +1,139 @@
+{
+  "appName": { "message": "History Blocklist" },
+  "appDesc": {
+    "message": "Automatically deletes browsing history for domains you choose, so they stay out of the address bar and history."
+  },
+
+  "loadedVersion": { "message": "Loaded version" },
+  "toggleAllTitle": { "message": "Turn the extension on or off" },
+  "on": { "message": "On" },
+  "off": { "message": "Off" },
+  "loading": { "message": "Loading…" },
+  "settings": { "message": "Settings" },
+
+  "notApplicableTab": { "message": "Not applicable to this tab" },
+  "blockHost": {
+    "message": "Block $HOST$",
+    "placeholders": { "host": { "content": "$1", "example": "example.com" } }
+  },
+  "unblockHost": {
+    "message": "Unblock $HOST$",
+    "placeholders": { "host": { "content": "$1", "example": "example.com" } }
+  },
+  "coveredByParent": {
+    "message": "Covered by the parent rule $DOMAIN$.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "blockedNow": {
+    "message": "$DOMAIN$ blocked. Cleaning up past history too.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "unblockedNow": {
+    "message": "$DOMAIN$ unblocked. Visits from now on will be recorded.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "removedNow": {
+    "message": "$DOMAIN$ removed. Visits from now on will be recorded.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "addedNow": {
+    "message": "$DOMAIN$ added. Cleaning up past history too.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "turnedOn": { "message": "Turned on." },
+  "turnedOff": { "message": "Turned off. History will be kept." },
+
+  "errInvalid": { "message": "That is not a domain." },
+  "errDuplicate": {
+    "message": "$DOMAIN$ is already on the list.",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "errFull": {
+    "message": "Storage limit reached — chrome.storage.sync holds 512 items. Remove a domain you no longer need."
+  },
+
+  "popupStats": {
+    "message": "$COUNT$ removed · $TOTAL$ blocked",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1,204" },
+      "total": { "content": "$2", "example": "6" }
+    }
+  },
+
+  "optionsTitle": { "message": "History Blocklist settings" },
+  "lede": {
+    "message": "Deletes visits to the domains you list — and their subdomains — the moment they are recorded. They disappear from address bar autocomplete and from <span class=\"mono\">chrome://history</span> alike."
+  },
+
+  "secDomains": { "message": "Blocked domains" },
+  "add": { "message": "Add" },
+  "remove": { "message": "Remove" },
+  "listEmpty": { "message": "No domains yet." },
+  "migratedNoDate": { "message": "Migrated entry — no record of when it was added" },
+  "domainsNote": {
+    "message": "Paste a whole URL and only the domain is kept. Adding <span class=\"mono\">example.com</span> also covers <span class=\"mono\">www.example.com</span> and <span class=\"mono\">m.example.com</span>."
+  },
+
+  "secOmnibox": { "message": "Block straight from the address bar" },
+  "omniboxNote": {
+    "message": "Type <span class=\"mono\">hb</span> in the address bar and press <kbd>Tab</kbd> (or <kbd>Space</kbd>) — a <strong>History Blocklist</strong> chip appears on the left. Type a domain and press <kbd>Enter</kbd> to block it; if it is already listed, it is unblocked instead. Listed domains also show up as suggestions so you can pick one to unblock."
+  },
+  "omniboxBullet1": {
+    "message": "The toolbar badge reports the result — <span class=\"mono\">＋</span> blocked · <span class=\"mono\">－</span> unblocked · <span class=\"mono\">!</span> not a domain"
+  },
+  "omniboxBullet2": {
+    "message": "To change the keyword, edit <span class=\"mono\">omnibox.keyword</span> in <span class=\"mono\">manifest.json</span>"
+  },
+
+  "secCleanup": { "message": "Past history" },
+  "deepSweepButton": { "message": "Sweep all history again" },
+  "sweepRunning": { "message": "Sweeping…" },
+  "sweepDeleted": {
+    "message": "$COUNT$ removed",
+    "placeholders": { "count": { "content": "$1", "example": "42" } }
+  },
+  "sweepDisabled": { "message": "Skipped — the extension is off. Turn it on first." },
+  "sweepFailed": {
+    "message": "Failed: $ERROR$",
+    "placeholders": { "error": { "content": "$1", "example": "no response" } }
+  },
+  "cleanupNote1": {
+    "message": "<strong>When a domain is new, its past history is swept in full automatically</strong> — whether you added it here or it arrived from another device over sync. A domain is only swept once; after that the five-minute sweep takes over."
+  },
+  "cleanupNote2": {
+    "message": "This button sweeps <strong>every listed domain again</strong>. You normally never need it — use it if you suspect an automatic sweep was cut short. It can take tens of seconds on a large history."
+  },
+
+  "secLimits": { "message": "What this cannot do" },
+  "limitsIntro": {
+    "message": "This extension <strong>does not prevent recording; it deletes right after</strong>. Chrome has no way to skip recording for a chosen domain. So the following are limits."
+  },
+  "limit1": { "message": "There is a window of a few hundred milliseconds where the visit is in history." },
+  "limit2": { "message": "Bookmarks, cookies, sessions, cache and saved passwords are left alone." },
+  "limit3": { "message": "<strong>Search engine suggestions</strong> in the address bar come from the server and cannot be blocked." },
+  "limit4": { "message": "With Chrome sync on, deletions take a moment to reach your other devices." },
+
+  "secStats": { "message": "Statistics" },
+  "statsLine": {
+    "message": "$COUNT$ removed · last removal $WHEN$",
+    "placeholders": {
+      "count": { "content": "$1", "example": "1,204" },
+      "when": { "content": "$2", "example": "2026-09-13 10:00" }
+    }
+  },
+  "statsNever": { "message": "none" },
+
+  "omniDefault": { "message": "<dim>History Blocklist</dim> type a domain to block or unblock" },
+  "omniWillBlock": {
+    "message": "<match>$DOMAIN$</match> <dim>block</dim> — includes subdomains, past history is cleaned too",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "omniWillUnblock": {
+    "message": "<match>$DOMAIN$</match> <dim>unblock</dim> — visits from now on will be recorded",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  },
+  "omniSuggestUnblock": {
+    "message": "<dim>unblock</dim> <match>$DOMAIN$</match>",
+    "placeholders": { "domain": { "content": "$1", "example": "example.com" } }
+  }
+}

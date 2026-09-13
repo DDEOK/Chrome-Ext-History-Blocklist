@@ -1,171 +1,206 @@
 # History Blocklist
 
-등록한 도메인의 Chrome 방문 기록을 **방문 즉시 삭제**하는 확장 프로그램(Manifest V3).
-주소창에 사이트 이름 일부를 쳐도 자동완성에 뜨지 않게 하는 것이 목적이다.
+A Chrome extension (Manifest V3) that **deletes browsing history for domains you choose, the
+moment it is recorded** — so those sites never show up in address-bar autocomplete.
 
-`blocked.example` 을 등록하면 그 도메인과 모든 서브도메인(`www.` · `m.` …)의 기록이 남지 않는다.
+Add `blocked.example` and that domain plus every subdomain (`www.`, `m.`, …) leaves no trace in
+your history.
+
+> 한국어 설명은 [아래](#한국어)에 있습니다.
+
+**No network requests. No host permissions. No content scripts. No analytics.**
+See [PRIVACY.md](PRIVACY.md).
+
+## How it works
+
+Chrome has no hook for "don't record this domain." So this extension is not a blocker but a
+**cleaner** — it deletes right after the visit is recorded. Three paths cover the gaps, because a
+Manifest V3 service worker is terminated whenever it goes idle.
+
+| Path | When | Role |
+|---|---|---|
+| `history.onVisited` | Right after a visit | Main path. This listener **wakes the sleeping service worker**, so visits are never missed |
+| Delayed re-check (1.5 s, 6 s) | Right after deletion | Recovers entries Chrome resurrects while attaching the title or favicon |
+| `alarms` sweep every 5 min | Periodic | Recovers anything the first two missed, or visits made while the extension was off |
+
+> `chrome.history` exposes exactly two events — `onVisited` and `onVisitRemoved`. There is no event
+> for "an entry came back", which is why the delayed re-check exists rather than an observer.
+
+### Past history
+
+When a domain is **new** — whether you added it here or it arrived from another device over sync —
+that domain alone is swept across **all time**. Text search relies on Chrome's tokenizer and misses
+some shapes, and "adding a domain also cleans its past" has to be true.
+
+A domain is swept in full only once (tracked per device in `chrome.storage.local`). The completion
+mark is written **after** the sweep finishes, so if the service worker dies mid-scan the next
+periodic sweep retries.
+
+## Limits — what this cannot do
+
+This extension deletes **browsing history only**.
+
+- There is a window of a few hundred milliseconds where the visit is in history. That gap cannot be
+  closed; Chrome offers no way to skip recording.
+- Bookmarks, cookies, login sessions, cache, saved passwords and autofill are untouched.
+- **Search engine suggestions** in the address bar come from the search provider, not from your
+  history, and cannot be blocked by any extension.
+- With Chrome sync on, deletions take a moment to reach your other devices.
+
+## Permissions
+
+| Permission | Why |
+|---|---|
+| `history` | Detect visits and delete history entries |
+| `storage` | The blocked-domain list (`sync`) and counters (`local`) |
+| `alarms` | The periodic sweep |
+| `activeTab` | Read the current tab's domain when you click the toolbar icon — only then |
+
+No host permissions (`<all_urls>`), no content scripts, no remote code. `omnibox` and `action` are
+manifest keys rather than permissions.
+
+## Using it
+
+| Where | What |
+|---|---|
+| **Address bar** | `hb` + <kbd>Tab</kbd> → domain + <kbd>Enter</kbd>. Already listed? It is unblocked instead. The toolbar badge reports the result (`＋` blocked · `－` unblocked · `!` not a domain) |
+| **Toolbar icon** | Block or unblock the site you are on, in one click |
+| **Settings page** | Manage the list · sweep everything again · statistics |
+
+Change the address-bar keyword in `manifest.json` → `omnibox.keyword`.
+
+## Install
+
+Not published to the Chrome Web Store yet — load it unpacked:
+
+1. Open `chrome://extensions`
+2. Turn on **Developer mode** (top right)
+3. **Load unpacked** → select this repository folder
+
+To update: `git pull`, then press **↻** on the extension card. The version number on the card is
+how you confirm the reload took effect.
+
+## Syncing across devices
+
+| | |
+|---|---|
+| **The extension itself** | Not synced. Chrome only syncs extensions installed from the Web Store — clone and load unpacked on each device |
+| **Code updates** | `git pull` + ↻ on each device |
+| **The blocked-domain list** | **Synced** through `chrome.storage.sync`, if you are signed into the same Chrome account |
+
+The list is stored as **one key per domain** (`d:example.com` → the time it was added). Holding the
+whole list in a single key would lose data: `chrome.storage.sync` keeps only the last write per key,
+so two devices each adding a domain would erase one another's addition. Splitting the keys lets the
+server merge them — and removes the need for conflict-resolution timestamps. The limit is 512 items
+(`MAX_ITEMS`); adding is refused at 480.
+
+List sync requires **the same extension ID on every device**. An unpacked extension derives its ID
+from the install path unless `manifest.json` carries a `key`, so this repository pins one. The `key`
+is a public key and is safe to publish. `python3 tools/extension_id.py` recomputes the ID from it.
+
+> Changing `key` makes the existing list **look deleted** — the old ID's `storage.sync` bucket is no
+> longer read, and there is no way to reach it. `tools/manifest.test.js` pins the resulting ID so it
+> cannot change by accident.
+
+## Development
+
+```bash
+node --test tools/            # all tests
+python3 tools/make_icons.py   # regenerate icon PNGs (needs Pillow)
+python3 tools/package.py      # build the Web Store zip into dist/
+```
+
+### Bump the version whenever `src/` changes
+
+For an unpacked extension the version number is **the only visible sign of which code is running**.
+Change `manifest.json` and `package.json` together and add a [CHANGELOG](CHANGELOG.md) entry —
+`tools/manifest.test.js` fails if you forget. The popup and settings page also show the loaded
+version.
+
+### The tests each guard a different kind of accident
+
+- `matching.test.js` — domain matching. It decides irreversible deletions, so it lives in
+  `src/shared.js` alone and is pinned here. The dangerous case is a **different domain that merely
+  shares a suffix**: `notblocked.example` must not match `blocked.example`.
+- `api-surface.test.js` — that every `chrome.*` API used actually exists. A nonexistent one is only
+  discovered when the extension is loaded, and it kills the whole service worker. Adding an API means
+  confirming it in the official docs and adding it to the allowlist.
+- `manifest.test.js` — version bumps, the pinned extension ID, `default_locale`, and that every
+  locale defines the same message keys (a key missing in one language renders as an empty string).
+
+```text
+manifest.json
+_locales/{en,ko}/messages.json   UI strings
+src/
+  background.js   service worker — detect, delete, sweep
+  omnibox.js      address-bar keyword mode (statically imported by background)
+  shared.js       domain normalization, matching, settings access (single source)
+  i18n.js         fills data-i18n attributes from _locales
+  popup.html/js   block or unblock the current site
+  options.html/js list management, full sweep, statistics
+  ui.css          shared by popup and options (light/dark aware)
+tools/
+  package.py          build the Web Store zip
+  make_icons.py       icon generator
+  extension_id.py     compute the extension ID from manifest key
+  *.test.js           see above
+```
+
+## License
+
+[MIT](LICENSE)
+
+---
+
+<a name="한국어"></a>
+
+# 한국어
+
+등록한 도메인의 Chrome 방문 기록을 **방문 즉시 삭제**하는 확장 프로그램(Manifest V3)입니다.
+주소창에 사이트 이름 일부를 쳐도 자동완성에 뜨지 않게 하는 것이 목적입니다.
+
+`blocked.example` 을 등록하면 그 도메인과 모든 서브도메인(`www.` · `m.` …)의 기록이 남지 않습니다.
+
+**네트워크 요청 없음 · 호스트 권한 없음 · 콘텐트 스크립트 없음 · 분석 없음.**
+자세한 것은 [PRIVACY.md](PRIVACY.md).
+
+## 동작 원리
+
+Chrome 에는 "특정 도메인만 기록하지 않기" 훅이 없습니다. 그래서 이 확장은 차단기가 아니라
+**청소기**입니다 — 기록된 직후 지웁니다. 서비스 워커가 수시로 종료되므로 세 갈래로 잡습니다.
+
+| 경로 | 언제 | 역할 |
+|---|---|---|
+| `history.onVisited` | 방문 직후 | 주 경로. **이 리스너가 잠든 서비스 워커를 깨우므로** 방문 자체는 놓치지 않습니다 |
+| 지연 재확인 (1.5초 · 6초) | 삭제 직후 | 제목·파비콘이 붙으며 되살아나는 항목을 회수 |
+| `alarms` 5분 주기 스윕 | 주기적 | 위 둘이 놓쳤거나 확장이 꺼져 있던 사이의 방문을 회수 |
+
+도메인이 **새로 들어오면**(직접 등록이든 동기화로 받은 것이든) 그 도메인만 전 기간 전수로 한 번
+훑습니다. 텍스트 검색은 Chrome 의 토큰화에 기대 못 잡는 형태가 남기 때문입니다.
+
+## 한계
+
+지우는 것은 **방문 기록뿐**입니다.
+
+- 기록 → 삭제 사이 수백 ms 동안은 방문 기록에 남아 있습니다. 원리상 없앨 수 없는 틈입니다.
+- 북마크 · 쿠키 · 로그인 세션 · 캐시 · 저장된 비밀번호는 건드리지 않습니다.
+- 주소창의 **검색 엔진 제안**은 서버가 주는 것이라 확장이 막을 수 없습니다.
+- Chrome 동기화를 켜두었으면 다른 기기로 삭제가 전파되기까지 시차가 있습니다.
 
 ## 쓰는 법
 
 | 어디서 | 무엇 |
 |---|---|
-| **주소표시줄** | `hb` + <kbd>Tab</kbd> → 도메인 + <kbd>Enter</kbd>. 등록돼 있으면 해제된다. 결과는 툴바 배지로 (`＋` 차단 · `－` 해제 · `!` 실패) |
+| **주소표시줄** | `hb` + <kbd>Tab</kbd> → 도메인 + <kbd>Enter</kbd>. 등록돼 있으면 해제됩니다. 결과는 툴바 배지로 (`＋` 차단 · `－` 해제 · `!` 실패) |
 | **툴바 아이콘** | 지금 보고 있는 사이트를 한 번에 차단/해제 |
 | **설정 화면** | 목록 관리 · 과거 기록 전체 정리 · 통계 |
 
-주소표시줄 키워드는 `manifest.json` 의 `omnibox.keyword` 에서 바꾼다.
-
-## 동작 원리
-
-Chrome 에는 "특정 도메인만 기록하지 않기" 훅이 없다. 그래서 **기록을 막는 것이 아니라 기록된
-직후 지운다.** 서비스 워커가 죽어도 새는 곳이 없도록 세 갈래로 잡는다.
-
-| 경로 | 언제 | 역할 |
-|---|---|---|
-| `history.onVisited` | 방문 직후 | 주 경로. **이 리스너가 잠든 서비스 워커를 깨우므로** 워커가 종료돼 있어도 방문 자체는 놓치지 않는다 |
-| 지연 재확인 (1.5초 · 6초) | 삭제 직후 | Chrome 이 제목·파비콘을 붙이며 같은 URL 을 되살리는 경우를 회수 |
-| `alarms` 5분 주기 스윕 | 주기적 | 위 둘이 실패했거나 확장이 꺼져 있던 사이의 방문을 회수 |
-
-> `chrome.history` 의 이벤트는 **`onVisited` 와 `onVisitRemoved` 둘뿐**이다.
-> 기록이 되살아나는 것을 알려주는 이벤트가 없어서 지연 재확인으로 메운다.
-> 없는 API 를 부르면 서비스 워커가 등록 단계에서 통째로 죽으므로
-> (`Service worker registration failed`), 쓰는 API 는 `tools/api-surface.test.js` 로 고정해 두었다.
-
-### 과거 기록
-
-도메인이 **새로 들어오면** — 직접 등록했든 다른 기기에서 동기화로 들어왔든 — 그 도메인만
-**전 기간 전수**로 한 번 훑는다. 텍스트 검색은 Chrome 의 토큰화에 기대므로 못 잡는 형태가
-남는데, "등록하면 과거 기록도 정리된다"가 참이려면 한 번은 전수로 봐야 한다.
-
-한 번 끝낸 도메인은 다시 훑지 않는다(기기별로 `storage.local` 에 기록). 마친 표시는 **끝난
-뒤에** 남기므로, 도중에 서비스 워커가 죽으면 다음 주기 스윕이 다시 시도한다.
-
-설정 화면의 "전체 방문 기록 훑어 정리" 는 **등록된 모든 도메인을 다시** 전수로 훑는다.
-평소에는 누를 일이 없고, 자동 스캔이 끊겼다고 의심될 때 쓴다.
-
-## 한계 — 확장이 못 하는 것
-
-이 확장이 지우는 것은 **방문 기록뿐**이다.
-
-- 기록 → 삭제 사이 수백 ms 동안은 방문 기록에 남아 있다. 원리상 없앨 수 없는 틈이다.
-- 북마크 · 쿠키 · 로그인 세션 · 캐시 · 저장된 비밀번호 · 자동완성 입력값은 건드리지 않는다.
-- 주소창의 **검색 엔진 제안**(구글이 주는 것)은 서버 쪽이라 막을 수 없다.
-- Chrome 동기화를 켜두었으면 다른 기기로 삭제가 전파되기까지 시차가 있다.
-
-## 권한
-
-| 권한 | 왜 |
-|---|---|
-| `history` | 방문을 감지하고 기록을 삭제한다 |
-| `storage` | 차단 도메인 목록(`sync`)과 통계(`local`) |
-| `alarms` | 주기 스윕 |
-| `activeTab` | 팝업에서 현재 탭 도메인을 읽는다 (아이콘을 눌렀을 때만) |
-
-호스트 권한(`<all_urls>`)은 쓰지 않는다. 페이지 내용은 읽지 않는다.
-주소표시줄 키워드(`omnibox`)와 툴바 배지(`action`)는 **권한이 아니라 manifest 키**라 권한 목록에 없다.
-
 ## 설치
 
-웹스토어에 올리지 않은 개인용이라 압축해제 로드로 쓴다.
+아직 웹스토어에 없습니다 — 압축해제 로드로 씁니다.
 
-1. `chrome://extensions` 를 연다
+1. `chrome://extensions` 를 엽니다
 2. 오른쪽 위 **개발자 모드** 켜기
 3. **압축해제된 확장 프로그램을 로드** → 이 저장소 폴더 선택
 
-갱신은 `git pull` 후 확장 카드의 **새로고침(↻)**. 카드의 버전 숫자가 바뀌면 반영된 것이다.
-
-### 윈도우에 내려받기
-
-비공개 저장소라 인증이 필요하다. [Git for Windows](https://git-scm.com/download/win) 가 깔려 있으면
-같이 들어오는 Git Credential Manager 가 **브라우저로 GitHub 로그인 창**을 띄운다 — 토큰을 직접
-만들 필요는 없다. PowerShell 에서:
-
-```powershell
-mkdir -Force "$env:USERPROFILE\Develop\github\ddeok" | Out-Null
-cd "$env:USERPROFILE\Develop\github\ddeok"
-git clone https://github.com/DDEOK/Chrome-History-Blocklist.git
-(Resolve-Path .\Chrome-History-Blocklist).Path   # 크롬에서 고를 경로
-```
-
-마지막 줄이 찍어준 경로를 위 3번에서 선택한다.
-
-## 기기 간 동기화
-
-| 무엇 | 어떻게 |
-|---|---|
-| **확장 설치** | **안 된다.** Chrome Sync 는 웹스토어에서 설치한 확장만 나른다. 기기마다 `git clone` + 압축해제 로드 |
-| **코드 갱신** | 기기마다 `git pull` 후 확장 카드의 ↻. 카드 버전이 바뀌면 반영된 것 |
-| **차단 목록** | **된다** (v1.2.0 부터). `chrome.storage.sync` 라 같은 Chrome 계정이면 퍼진다 |
-
-목록은 **도메인마다 키 하나**(`d:example.com` → 추가 시각)로 저장한다. 배열 한 키에 담으면
-`storage.sync` 가 키 단위로 마지막 쓰기만 남겨 **두 기기가 각각 추가할 때 한쪽이 통째로
-사라진다.** 키를 쪼개면 서버가 병합하므로 충돌 해소용 타임스탬프가 따로 필요 없다.
-한도는 항목 512개(`MAX_ITEMS`)이고 480개에서 추가를 막는다.
-
-목록 동기화의 전제는 **모든 기기에서 확장 ID 가 같다**는 것이다. 압축해제 확장의 ID 는
-`manifest.json` 에 `key` 가 없으면 **설치 경로에서** 나와 기기마다 달라지는데, `key` 를 박아
-경로와 무관하게 고정했다.
-
-```text
-확장 ID: jhkhlikcigccmladmjnknhfijmjlnccc
-```
-
-`chrome://extensions` 카드의 `ID:` 줄이 모든 기기에서 이 값이어야 한다. 다르면 그 기기는 다른
-`storage.sync` 통을 쓰고 있는 것이다. `python3 tools/extension_id.py` 가 `key` 에서 이 값을
-다시 계산한다.
-
-> [!warning] `key` 를 바꾸면 기존 목록이 **사라진 것처럼** 보인다
-> ID 가 바뀌면 옛 ID 의 `storage.sync` 통을 더는 안 읽는다. 데이터가 지워진 것은 아니지만
-> 되찾을 수단이 없으므로, 도메인을 다시 등록해야 한다. `tools/manifest.test.js` 가 ID 상수와
-> 개인키-공개키 대응을 고정해 실수로 바뀌는 것을 막는다.
-
-### 서명 개인키
-
-`keys/extension-key.pem` 은 이 확장 ID 를 만드는 **개인키**이고 저장소에 함께 둔다 —
-**저장소가 private 이라는 전제**다. 압축해제 로드에는 쓰이지 않고(`manifest` 의 `key` 만 쓴다),
-`.crx` 를 직접 서명해 배포할 때만 필요하다.
-
-- 저장소를 공개로 바꾸면 **키부터 새로 만든다** — 남이 같은 ID 의 확장을 서명할 수 있다
-- 웹스토어에 올릴 일이 생기면 `keys/` 를 zip 에서 빼고, `key` 필드도 지운다(스토어가 자체 키를 준다)
-
-## 개발
-
-```bash
-node --test tools/            # 전체 테스트
-python3 tools/make_icons.py   # 아이콘 PNG 재생성 (Pillow 필요)
-```
-
-### `src/` 를 고치면 버전을 올린다
-
-압축해제로 로드한 확장은 **버전이 "지금 도는 게 어느 코드인가"를 알려주는 유일한 표시**다.
-버전을 그대로 두고 고치면 `chrome://extensions` 카드가 안 변해서 새로고침이 먹었는지 알 수 없다.
-`manifest.json` 과 `package.json` 을 같이 올리고 [CHANGELOG](CHANGELOG.md) 에 적는다 —
-`tools/manifest.test.js` 가 안 올렸을 때 실패한다. 팝업·설정 화면 머리에도 로드된 버전이 뜬다.
-
-테스트 둘이 각각 다른 종류의 사고를 막는다.
-
-- `matching.test.js` — 도메인 매칭. 되돌릴 수 없는 삭제를 좌우하므로 `src/shared.js` 한 곳에만
-  두고 고정한다. 특히 `notblocked.example` 처럼 **접미사만 같은 남의 도메인**을 잡으면 안 된다.
-- `api-surface.test.js` — 쓰는 `chrome.*` API 의 실재. 없는 API 는 확장을 로드해야만 드러나고
-  그때는 서비스 워커가 통째로 죽는다. 새 API 를 쓰려면 공식 문서에서 확인하고 화이트리스트에
-  더해야 한다.
-- `manifest.test.js` — 버전. `src/` 를 고치고 버전을 안 올리면 실패한다 (아래).
-
-```text
-manifest.json
-src/
-  background.js   서비스 워커 — 감지·삭제·스윕
-  omnibox.js      주소표시줄 키워드 모드 (background 가 정적 import)
-  shared.js       도메인 정규화·매칭·설정 접근 (유일한 원본)
-  popup.html/js   현재 사이트 한 번에 차단/해제
-  options.html/js 목록 관리·전체 정리·통계
-  ui.css          팝업·옵션 공용 (라이트/다크 대응)
-tools/
-  make_icons.py       아이콘 생성기
-  extension_id.py     manifest 의 key 에서 확장 ID 계산
-  matching.test.js    도메인 매칭
-  api-surface.test.js 쓰는 chrome API 의 실재
-  manifest.test.js    버전·확장 ID·키 대응
-keys/
-  extension-key.pem   확장 서명 개인키 (저장소가 private 인 전제)
-```
+갱신은 `git pull` 후 확장 카드의 **↻**. 카드의 버전 숫자가 바뀌면 반영된 것입니다.

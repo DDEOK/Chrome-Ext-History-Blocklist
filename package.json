@@ -1,6 +1,6 @@
 {
   "name": "chrome-history-blocklist",
-  "version": "1.4.0",
+  "version": "2.0.0",
   "private": true,
   "description": "지정한 도메인의 Chrome 방문 기록을 자동으로 삭제하는 확장 프로그램",
   "type": "module",

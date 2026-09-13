@@ -26,6 +26,8 @@ const VERIFIED = new Set([
   'chrome.history.deleteUrl',
   'chrome.history.onVisited',
   'chrome.history.search',
+  'chrome.i18n.getMessage',
+  'chrome.i18n.getUILanguage',
   'chrome.omnibox.onInputChanged',
   'chrome.omnibox.onInputEntered',
   'chrome.omnibox.onInputStarted',
@@ -59,7 +61,9 @@ function usedApis() {
   const found = new Map(); // api -> 파일 목록
   for (const name of readdirSync(SRC_DIR).filter((f) => f.endsWith('.js'))) {
     const source = readFileSync(join(SRC_DIR, name), 'utf8');
-    for (const [api] of source.matchAll(/\bchrome\.[a-zA-Z]+\.[a-zA-Z]+/g)) {
+    // 네임스페이스·멤버에 숫자가 들어간다 (chrome.i18n). [a-zA-Z]+ 로 두면 그런 API 를
+    // 통째로 못 보고, 화이트리스트에 있어도 "안 쓰는 항목"으로 잘못 잡힌다.
+    for (const [api] of source.matchAll(/\bchrome\.[a-zA-Z][a-zA-Z0-9]*\.[a-zA-Z][a-zA-Z0-9]*/g)) {
       found.set(api, [...(found.get(api) ?? []), name]);
     }
   }

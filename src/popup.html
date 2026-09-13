@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="ko">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>History Blocklist</title>
+    <title data-i18n="appName">History Blocklist</title>
     <link rel="stylesheet" href="ui.css" />
     <style>
       body {
@@ -40,17 +40,17 @@
   </head>
   <body>
     <header class="row">
-      <h1>History Blocklist</h1>
-      <span class="dim mono" id="version" title="로드된 버전"></span>
+      <h1 data-i18n="appName">History Blocklist</h1>
+      <span class="dim mono" id="version" data-i18n-title="loadedVersion"></span>
       <span class="spacer"></span>
-      <label class="switch" title="전체 켜기/끄기">
+      <label class="switch" data-i18n-title="toggleAllTitle">
         <input type="checkbox" id="enabled" />
         <span class="track"><span class="thumb"></span></span>
       </label>
     </header>
 
     <div class="site">
-      <div class="host mono" id="host">읽는 중…</div>
+      <div class="host mono" id="host" data-i18n="loading">Loading…</div>
       <button id="toggle" class="primary" disabled>—</button>
     </div>
 
@@ -59,7 +59,7 @@
     <footer>
       <span class="dim" id="stats"></span>
       <span class="spacer"></span>
-      <button class="link" id="open-options">설정</button>
+      <button class="link" id="open-options" data-i18n="settings">Settings</button>
     </footer>
 
     <script type="module" src="popup.js"></script>

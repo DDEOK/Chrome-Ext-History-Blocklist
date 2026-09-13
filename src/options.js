@@ -1,4 +1,7 @@
+import { localizeDocument, t } from './i18n.js';
 import { addDomain, getSettings, getStats, removeDomain, setEnabled } from './shared.js';
+
+localizeDocument();
 
 const el = {
   enabled: document.getElementById('enabled'),
@@ -27,7 +30,7 @@ function renderList(domains, addedAt) {
   if (!domains.length) {
     const li = document.createElement('li');
     li.className = 'empty';
-    li.textContent = '등록된 도메인이 없다.';
+    li.textContent = t('listEmpty');
     el.list.append(li);
     return;
   }
@@ -44,15 +47,15 @@ function renderList(domains, addedAt) {
     const when = document.createElement('span');
     when.className = 'dim';
     const ts = addedAt?.get(domain);
-    when.textContent = ts ? new Date(ts).toLocaleDateString('ko-KR') : '';
-    when.title = ts ? new Date(ts).toLocaleString('ko-KR') : '옮겨온 항목 — 추가 시점 기록 없음';
+    when.textContent = ts ? new Date(ts).toLocaleDateString() : '';
+    when.title = ts ? new Date(ts).toLocaleString() : t('migratedNoDate');
 
     const remove = document.createElement('button');
-    remove.textContent = '삭제';
+    remove.textContent = t('remove');
     remove.addEventListener('click', async () => {
       remove.disabled = true;
       await removeDomain(domain);
-      say(`${domain} 삭제. 이후 방문부터 기록이 남는다.`, 'ok');
+      say(t('removedNow', [domain]), 'ok');
       await render();
     });
 
@@ -68,13 +71,11 @@ async function render() {
   ]);
 
   el.enabled.checked = enabled;
-  el.enabledLabel.textContent = enabled ? '켜짐' : '꺼짐';
+  el.enabledLabel.textContent = t(enabled ? 'on' : 'off');
   renderList(domains, addedAt);
 
-  const last = lastDeletedAt
-    ? new Date(lastDeletedAt).toLocaleString('ko-KR')
-    : '없음';
-  el.stats.textContent = `지운 기록 ${deletedCount.toLocaleString('ko-KR')}건 · 마지막 삭제 ${last}`;
+  const last = lastDeletedAt ? new Date(lastDeletedAt).toLocaleString() : t('statsNever');
+  el.stats.textContent = t('statsLine', [deletedCount.toLocaleString(), last]);
 }
 
 el.form.addEventListener('submit', async (event) => {
@@ -85,13 +86,10 @@ el.form.addEventListener('submit', async (event) => {
   const result = await addDomain(raw);
   if (result.ok) {
     el.input.value = '';
-    say(`${result.domain} 추가. 과거 기록도 정리 중이다.`, 'ok');
-  } else if (result.reason === 'duplicate') {
-    say(`${result.domain} 은(는) 이미 등록돼 있다.`, 'error');
-  } else if (result.reason === 'full') {
-    say('저장 한도에 걸렸다 — storage.sync 는 항목 512개까지다. 안 쓰는 도메인을 지워라.', 'error');
+    say(t('addedNow', [result.domain]), 'ok');
   } else {
-    say('도메인으로 읽을 수 없는 입력이다.', 'error');
+    const failure = { duplicate: 'errDuplicate', full: 'errFull' };
+    say(t(failure[result.reason] ?? 'errInvalid', [result.domain ?? raw.trim()]), 'error');
   }
   await render();
 });
@@ -103,24 +101,24 @@ el.enabled.addEventListener('change', async () => {
 
 el.deepSweep.addEventListener('click', async () => {
   el.deepSweep.disabled = true;
-  el.sweepResult.textContent = '훑는 중…';
+  el.sweepResult.textContent = t('sweepRunning');
   try {
     const response = await chrome.runtime.sendMessage({ type: 'deepSweep' });
     if (!response?.ok) {
-      el.sweepResult.textContent = `실패: ${response?.error ?? '응답 없음'}`;
+      el.sweepResult.textContent = t('sweepFailed', [String(response?.error ?? '')]);
     } else if (response.skipped === 'disabled') {
-      el.sweepResult.textContent = '꺼져 있어 실행하지 않았다 — 먼저 켜라';
+      el.sweepResult.textContent = t('sweepDisabled');
     } else {
-      el.sweepResult.textContent = `${response.deleted.toLocaleString('ko-KR')}건 삭제`;
+      el.sweepResult.textContent = t('sweepDeleted', [response.deleted.toLocaleString()]);
     }
   } catch (error) {
-    el.sweepResult.textContent = `실패: ${error}`;
+    el.sweepResult.textContent = t('sweepFailed', [String(error)]);
   }
   el.deepSweep.disabled = false;
   await render();
 });
 
-// 팝업에서 바꾼 내용이 열려 있는 설정 화면에도 바로 반영되게 한다.
+// 팝업이나 다른 기기에서 바꾼 내용이 열려 있는 설정 화면에도 바로 반영되게 한다.
 chrome.storage.onChanged.addListener(() => {
   render();
 });

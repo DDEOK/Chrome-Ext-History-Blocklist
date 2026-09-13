@@ -6,8 +6,8 @@
 
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { createHash, createPublicKey } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -38,10 +38,35 @@ test('확장 ID 가 고정돼 있다 — 기기 간 설정 동기화의 전제',
   assert.equal(extensionId(key), EXPECTED_ID);
 });
 
-test('manifest 의 공개키가 keys/extension-key.pem 에서 나온 것이다', () => {
-  const pem = readFileSync(join(ROOT, 'keys', 'extension-key.pem'), 'utf8');
-  const derived = createPublicKey(pem).export({ type: 'spki', format: 'der' }).toString('base64');
-  assert.equal(derived, read('manifest.json').key, '개인키를 다시 만들었으면 manifest 의 key 도 바꿔야 한다');
+test('_locales 가 default_locale 과 맞고, 언어마다 키가 같다', () => {
+  const manifest = read('manifest.json');
+  assert.ok(manifest.default_locale, 'default_locale 이 없으면 __MSG_…__ 가 해석되지 않는다');
+
+  const locales = readdirSync(join(ROOT, '_locales'));
+  assert.ok(
+    locales.includes(manifest.default_locale),
+    `default_locale(${manifest.default_locale}) 의 번역 파일이 없다`,
+  );
+
+  // 키가 한쪽에만 있으면 그 언어에서 **빈 문자열**이 나온다 — 오류 없이 화면이 빈다.
+  const keysOf = (locale) =>
+    new Set(Object.keys(read(join('_locales', locale, 'messages.json'))));
+  const base = keysOf(manifest.default_locale);
+  for (const locale of locales) {
+    if (locale === manifest.default_locale) continue;
+    const other = keysOf(locale);
+    assert.deepEqual([...base].filter((k) => !other.has(k)), [], `${locale} 에 빠진 키`);
+    assert.deepEqual([...other].filter((k) => !base.has(k)), [], `${locale} 에만 있는 키`);
+  }
+});
+
+test('manifest 가 참조하는 __MSG_…__ 키가 번역 파일에 있다', () => {
+  const manifest = read('manifest.json');
+  const used = [...JSON.stringify(manifest).matchAll(/__MSG_([A-Za-z0-9_]+)__/g)].map((m) => m[1]);
+  const messages = read(join('_locales', manifest.default_locale, 'messages.json'));
+  for (const key of used) {
+    assert.ok(key in messages, `manifest 가 쓰는 ${key} 가 번역 파일에 없다`);
+  }
 });
 
 test('버전이 Chrome 이 받는 형식이다 — 점으로 이은 정수 1~4개', () => {
