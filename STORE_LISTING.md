@@ -90,11 +90,32 @@ sites do not appear in address bar autocomplete or in chrome://history.
 
 **데이터 사용 (Data usage 체크박스)**
 
-수집·전송이 없으므로 데이터 유형을 **하나도 선택하지 않는다.** 아래 세 항목은 모두 동의한다.
+> [!warning] "전송하지 않으니 체크할 것이 없다"는 **틀렸다**
+> 구글의 `handle` 은 *collecting, transmitting, using, or sharing* 을 전부 포함하고, FAQ 가
+> 못박고 있다 — *"Extensions are required to disclose how they handle user data, **even when data
+> is processed or stored locally** and is not transmitted to external servers or third parties."*
+> **읽기만 해도 신고 대상**이다. 빠뜨리면 나중에 허위 신고로 정지될 수 있다.
+
+| 데이터 유형 | 체크 | 근거 |
+|---|:---:|---|
+| **웹 기록** | **☑** | `chrome.history` 로 방문 URL·제목·시각을 읽는다. 항목 설명 그대로다 |
+| 개인 식별 정보 | ☐ | 접근하지 않는다 |
+| 건강 정보 | ☐ | |
+| 금융 및 결제 정보 | ☐ | |
+| 인증 정보 | ☐ | |
+| 개인적인 커뮤니케이션 | ☐ | |
+| 위치 | ☐ | |
+| 사용자 활동 | ☐ | 클릭·마우스·스크롤·키 입력을 보지 않는다 |
+| 웹사이트 콘텐츠 | ☐ | **페이지 내용을 읽지 않는다** — 호스트 권한도 콘텐트 스크립트도 없다 |
+
+확인 3개는 **전부 체크**한다. 셋 다 사실이다.
 
 - 승인된 용도 외 제3자에게 판매·이전하지 않음
 - 제품의 단일 목적과 무관한 용도로 사용·이전하지 않음
 - 신용도 판단·대출 목적으로 사용·이전하지 않음
+
+**`PRIVACY.md` 와 어긋나지 않게 유지한다** — 심사자가 대조한다. 그 문서도 "수집 안 함"이 아니라
+"웹 기록을 로컬에서 읽고, 전송·공유·판매는 없다"로 적혀 있다.
 
 ## 심사에서 물어올 만한 것
 

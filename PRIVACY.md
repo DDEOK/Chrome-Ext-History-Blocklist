@@ -2,7 +2,13 @@
 
 _Last updated: 2026-09-13_
 
-**History Blocklist does not collect, transmit, or sell any data. Nothing leaves your browser.**
+**History Blocklist reads your browsing history on your own device in order to delete the entries
+you asked it to delete. Nothing is transmitted, shared, or sold — the extension makes no network
+requests of any kind, and the developer has no access to anything.**
+
+Chrome Web Store disclosure: this extension declares **Web History** as the data it handles, because
+it reads history entries locally. Google requires that disclosure even for data that never leaves
+the device. No other data category is handled.
 
 ## What the extension can access
 
@@ -57,7 +63,9 @@ Questions or reports: open an issue at
 
 _최종 수정: 2026-09-13_
 
-**이 확장은 어떤 데이터도 수집·전송·판매하지 않습니다. 브라우저 밖으로 나가는 것이 없습니다.**
+**이 확장은 사용자가 지정한 기록을 지우기 위해 방문 기록을 그 기기 안에서만 읽습니다. 전송·공유·판매는 없고, 네트워크 요청 자체를 하지 않으며, 개발자는 아무것도 볼 수 없습니다.**
+
+Chrome 웹스토어 신고 항목: 기록을 로컬에서 읽으므로 **웹 기록(Web History)** 하나를 신고합니다. 구글은 기기 밖으로 나가지 않는 데이터도 신고하도록 요구합니다. 그 밖의 데이터 유형은 다루지 않습니다.
 
 ## 권한별 사용 목적
 
