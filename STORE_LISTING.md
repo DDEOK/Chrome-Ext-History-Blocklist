@@ -69,6 +69,12 @@ Automatically deletes browsing history for domains you choose, so they stay out 
 
 ## 상세 설명
 
+> 스토어는 **언어별 목록**을 지원한다(제목·짧은 설명·상세 설명을 언어마다 따로 넣는다).
+> 기본 언어는 영어이고, 한국어를 추가하면 한국어 브라우저에서 아래 국문이 뜬다.
+> **스크린샷만은 언어별로 못 나눈다** — 한 세트를 모든 언어가 공유한다.
+
+### 영어 (기본)
+
 ```
 Some sites you visit do not need to live in your address bar.
 
@@ -92,6 +98,33 @@ cache, or saved passwords, and it cannot suppress search-engine suggestions, whi
 search provider rather than from your history.
 
 Open source (MIT): https://github.com/DDEOK/Chrome-Ext-History-Blocklist
+```
+
+### 한국어
+
+```
+주소창에 남지 않았으면 하는 사이트가 있습니다.
+
+History Blocklist 는 등록한 도메인의 방문 기록을 기록되는 즉시 지웁니다.
+주소창에 사이트 이름 일부를 쳐도 자동완성에 뜨지 않습니다.
+
+• 도메인을 하나 넣으면 모든 서브도메인이 함께 걸립니다 (www., m., …)
+• 새로 등록한 도메인의 과거 기록은 자동으로 전부 정리합니다
+• 지금 보고 있는 사이트는 툴바 아이콘에서 한 번에 차단하거나 해제합니다
+• 주소창에서 바로도 됩니다 — "hb" 를 치고 Tab, 이어서 도메인
+
+개인정보
+이 확장은 네트워크 요청을 전혀 하지 않습니다. 수집도, 전송도, 판매도 없습니다.
+호스트 권한을 요청하지 않고, 콘텐트 스크립트를 넣지 않으며, 페이지 내용을 읽지 않습니다.
+차단 도메인 목록은 Chrome 자체 동기화 저장소에, 사용자 본인의 Google 계정 아래 보관됩니다.
+
+할 수 없는 것
+Chrome 에는 특정 도메인만 기록하지 않게 하는 기능이 없어서, 기록된 직후에 지웁니다 —
+그 사이 수백 밀리초의 틈이 있습니다. 북마크·쿠키·로그인 세션·캐시·저장된 비밀번호는
+건드리지 않습니다. 주소창에 뜨는 검색 엔진 제안은 방문 기록이 아니라 검색 서비스가
+주는 것이라 막을 수 없습니다.
+
+오픈소스 (MIT): https://github.com/DDEOK/Chrome-Ext-History-Blocklist
 ```
 
 ## 개인정보 보호 관행 (Privacy practices 탭)
@@ -161,9 +194,23 @@ sites do not appear in address bar autocomplete or in chrome://history.
 값은 **패키지에 동봉된 `_locales/*/messages.json`** 에서만 온다. 사용자 입력·원격 데이터가 그
 경로로 들어가지 않는다(도메인 같은 값은 전부 `textContent` 로 넣는다).
 
+## 제출 기록
+
+| | |
+|---|---|
+| 최초 제출 | 2026-09-13 · v2.1.0 |
+| 상태 | **검토 대기 중** |
+| 스토어 확장 ID | `igdgdlihohidgldoodpoljhbhgmdpbol` |
+| 스토어 주소 (승인 후) | `https://chromewebstore.google.com/detail/igdgdlihohidgldoodpoljhbhgmdpbol` |
+
+**이 ID 는 저장소의 것과 다르다.** 압축해제로 로드한 확장과 스토어판은 크롬 입장에서 **서로 다른
+확장**이고, `chrome.storage.sync` 통도 따로다. 승인되면 세 기기 모두 스토어판으로 갈아타야
+목록이 하나로 묶인다.
+
 ## 게시 후
 
-- [ ] 스토어가 발급한 확장 ID 를 기록해 둔다 (저장소의 `key` 와 무관한 별개 값이다)
+- [x] 스토어가 발급한 확장 ID 기록 (위 표)
 - [ ] 자기 기기에서 **압축해제 확장을 지우고 스토어판을 설치**한다 — 그래야 기기 간 목록
       동기화가 하나의 ID 로 묶인다. 압축해제판의 목록은 따라오지 않으므로 다시 등록한다
 - [ ] README 의 "Install" 절에 스토어 링크를 추가한다
+- [ ] 한국어 목록 추가 (위 "상세 설명"의 국문) — 제출 시 영어만 넣었다면
