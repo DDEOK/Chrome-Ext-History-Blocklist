@@ -199,7 +199,8 @@ sites do not appear in address bar autocomplete or in chrome://history.
 | | |
 |---|---|
 | 최초 제출 | 2026-09-13 · v2.1.0 |
-| 상태 | **검토 대기 중** |
+| 상태 | **게시됨** — 2026-09-14 확인. **제출에서 게시까지 하루 안** |
+| 스토어 주소 | <https://chromewebstore.google.com/detail/igdgdlihohidgldoodpoljhbhgmdpbol> |
 | 스토어 확장 ID | `igdgdlihohidgldoodpoljhbhgmdpbol` |
 | 스토어 주소 (승인 후) | `https://chromewebstore.google.com/detail/igdgdlihohidgldoodpoljhbhgmdpbol` |
 | 데이터 신고 | **웹 기록 하나만** 체크 · 확인 3개 전부 체크 |
@@ -214,10 +215,18 @@ sites do not appear in address bar autocomplete or in chrome://history.
 확장**이고, `chrome.storage.sync` 통도 따로다. 승인되면 세 기기 모두 스토어판으로 갈아타야
 목록이 하나로 묶인다.
 
-## 게시 후
+## 게시 후 — 전부 완료 (2026-09-14)
 
 - [x] 스토어가 발급한 확장 ID 기록 (위 표)
-- [ ] 자기 기기에서 **압축해제 확장을 지우고 스토어판을 설치**한다 — 그래야 기기 간 목록
-      동기화가 하나의 ID 로 묶인다. 압축해제판의 목록은 따라오지 않으므로 다시 등록한다
-- [ ] README 의 "Install" 절에 스토어 링크를 추가한다
+- [x] 세 기기(회사 맥·집 맥·윈도우)에서 **압축해제 확장을 지우고 스토어판 설치** — 목록 동기화 확인
+- [x] README "Install" 절에 스토어 링크 추가
 - [ ] 한국어 목록 추가 (위 "상세 설명"의 국문) — 제출 시 영어만 넣었다면
+
+## 다음 갱신 때
+
+1. `src/` 를 고치고 **버전을 올린다**(`manifest.json`·`package.json` 둘 다 · `CHANGELOG.md`)
+2. `python3 tools/package.py`
+3. 대시보드 → Package 탭 → 새 zip 업로드 → 제출. **갱신도 심사를 거친다**
+4. 통과하면 기존 사용자에게 자동 배포된다. 문제가 생기면 **롤백**으로 즉시 되돌린다
+
+절차 일반은 볼트 `10_Knowledge/Tooling/Chrome 웹스토어 확장 게시 절차 — 등록·제출·심사·갱신`.

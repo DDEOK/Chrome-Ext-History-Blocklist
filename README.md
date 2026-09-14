@@ -73,7 +73,10 @@ Change the address-bar keyword in `manifest.json` → `omnibox.keyword`.
 
 ## Install
 
-Not published to the Chrome Web Store yet — load it unpacked:
+**[Get it from the Chrome Web Store](https://chromewebstore.google.com/detail/igdgdlihohidgldoodpoljhbhgmdpbol)** —
+installs on every device signed into the same Chrome account, and updates itself.
+
+### Or load it unpacked (for development)
 
 1. Open `chrome://extensions`
 2. Turn on **Developer mode** (top right)
@@ -82,13 +85,16 @@ Not published to the Chrome Web Store yet — load it unpacked:
 To update: `git pull`, then press **↻** on the extension card. The version number on the card is
 how you confirm the reload took effect.
 
+> An unpacked build and the Web Store build are **separate extensions** to Chrome — different IDs,
+> and therefore separate `chrome.storage.sync` buckets. Running both means two blocked-domain lists.
+
 ## Syncing across devices
 
 | | |
 |---|---|
-| **The extension itself** | Not synced. Chrome only syncs extensions installed from the Web Store — clone and load unpacked on each device |
-| **Code updates** | `git pull` + ↻ on each device |
-| **The blocked-domain list** | Stored in `chrome.storage.sync`, but **not shared between unpacked installs** — see below |
+| **The extension itself** | **Synced** when installed from the Web Store. An unpacked build is not — clone and load it on each device |
+| **Code updates** | **Automatic** from the Web Store. Unpacked: `git pull` + ↻ on each device |
+| **The blocked-domain list** | **Shared** across devices on the Web Store build. Between unpacked installs it is not — see below |
 
 The list is stored as **one key per domain** (`d:example.com` → the time it was added). Holding the
 whole list in a single key would lose data: `chrome.storage.sync` keeps only the last write per key,
